@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 #include <poll.h>
 #include <csignal>
+#include <cstring>
 #include "../client/client.hpp"
 //_______________________________________________________//
 #define RED "\e[1;31m" 

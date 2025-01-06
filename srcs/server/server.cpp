@@ -2,6 +2,52 @@
 
 bool Server::HasSignal = false;
 
+void Server::AcceptNewClient()
+{
+    Client cli; //-> cria um novo cliente
+    struct sockaddr_in cliadd;
+    struct pollfd NewPoll;
+    socklen_t len = sizeof(cliadd);
+
+    int incofd = accept(ServerSocketFd, (sockaddr *)&(cliadd), &len);
+    if (incofd == -1)
+        {std::cout << "accept() falhou" << std::endl; return;}
+
+    if (fcntl(incofd, F_SETFL, O_NONBLOCK) == -1)
+        {std::cout << "fcntl() falhou" << std::endl; return;}
+
+    NewPoll.fd = incofd; //-> adiciona o socket do cliente ao pollfd
+    NewPoll.events = POLLIN; //-> define o evento para POLLIN para leitura de dados
+    NewPoll.revents = 0; //-> define o revents para 0
+
+    cli.SetFd(incofd); //-> define o descritor de arquivo do cliente
+    cli.setIpAdd(inet_ntoa((cliadd.sin_addr)));
+    clients.push_back(cli); //-> adiciona o cliente ao vetor de clientes
+    fds.push_back(NewPoll); //-> adiciona o socket do cliente ao pollfd
+
+    std::cout << GRE << "Cliente <" << incofd << "> Conectado" << WHI << std::endl;
+}
+
+void Server::ReceiveNewData(int fd)
+{
+    char buff[1024]; //-> buffer para os dados recebidos
+    memset(buff, 0, sizeof(buff)); //-> limpa o buffer
+
+    ssize_t bytes = recv(fd, buff, sizeof(buff) - 1 , 0); //-> recebe os dados
+
+    if(bytes <= 0){ //-> verifica se o cliente desconectou
+        std::cout << RED << "Cliente <" << fd << "> Desconectado" << WHI << std::endl;
+        ClearClients(fd); //-> limpa o cliente
+        close(fd); //-> fecha o socket do cliente
+    }
+
+    else{ //-> imprime os dados recebidos
+        buff[bytes] = '\0';
+        std::cout << YEL << "Cliente <" << fd << "> Dados: " << WHI << buff;
+        //aqui você pode adicionar seu código para processar os dados recebidos: parsear, verificar, autenticar, lidar com o comando, etc...
+    }
+}
+
 void Server::SignalHandler(int signum)
 {
     (void)signum;
@@ -64,6 +110,24 @@ void Server::ServerInit()
     this->Port = 4444;
     SerSocket(); //-> cria o socket do servidor
 
-    std::cout << GRE << "Servidor <" << ServerSocketFd << "> Conectado" << WHI << std::endl;
-    std::cout << "Aguardando para aceitar uma conexão...\n";
-}
+    std::cout << "Esperando conexão...\n";
+
+        while (Server::HasSignal == false) //-> executa o servidor até que o sinal seja recebido
+        {
+            if((poll(&fds[0],fds.size(),-1) == -1) && Server::HasSignal == false) //-> espera por um evento
+                throw(std::runtime_error("poll() falhou"));
+
+            for (size_t i = 0; i < fds.size(); i++) // loop por todos os fds
+            {
+                if (fds[i].revents & POLLIN) //-> verifica se há dados para ler
+                {
+                    if (fds[i].fd == ServerSocketFd)
+                        AcceptNewClient();
+                    else
+                        ReceiveNewData(fds[i].fd);
+                }
+            }
+        }
+        CloseFds();
+    }
+
