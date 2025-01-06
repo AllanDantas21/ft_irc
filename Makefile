@@ -3,7 +3,7 @@ CXXFLAGS = -Wall -Wextra -Werror -std=c++98
 OBJDIR = obj
 SRCS = $(shell find . -name "*.cpp")
 OBJS = $(patsubst %.cpp,$(OBJDIR)/%.o,$(SRCS))
-NAME = ft_irc
+NAME = ircserv
 
 all: $(NAME)
 
