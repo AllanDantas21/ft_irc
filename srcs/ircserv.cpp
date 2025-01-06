@@ -1,5 +1,4 @@
-#include "incs/server/server.hpp"
-#include "incs/utils/prompt.hpp"
+#include "../incs/ircserv.hpp"
 
 int main()
 {
