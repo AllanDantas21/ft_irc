@@ -1,9 +1,10 @@
 #include "incs/server/server.hpp"
+#include "incs/utils/prompt.hpp"
 
 int main()
 {
     Server ser;
-    std::cout << "---- SERVER ----" << std::endl;
+    introduce();
     try{
         signal(SIGINT, Server::SignalHandler); //-> captura o sinal (ctrl + c)
         signal(SIGQUIT, Server::SignalHandler); //-> captura o sinal (ctrl + \)
