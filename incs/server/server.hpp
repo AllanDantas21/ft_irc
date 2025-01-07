@@ -14,7 +14,7 @@ private:
 public:
     Server(){ServerSocketFd = -1;} //-> construtor padrão
 
-    void ServerInit(); //-> inicialização do servidor
+    void ServerInit(int port, std::string password); //-> inicialização do servidor
     void SerSocket(); //-> criação do socket do servidor
     void AcceptNewClient(); //-> aceitar novo cliente
     void ReceiveNewData(int fd); //-> receber novos dados de um cliente registrado

@@ -105,9 +105,10 @@ void Server::ClearClients(int fd){ //-> limpa os clientes
     }
 }
 
-void Server::ServerInit()
+void Server::ServerInit(int port, std::string password)
 {
-    this->Port = 4444;
+    (void) password;
+    this->Port = port;
     SerSocket(); //-> cria o socket do servidor
 
     std::cout << "Esperando conexão...\n";
