@@ -3,4 +3,4 @@
 
 void introduce();
 
-#endif // PROMPT_HPP
+#endif
