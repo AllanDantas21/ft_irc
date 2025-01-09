@@ -14,7 +14,7 @@
 #include <cstdlib>
 #include <cstring>
 
-
+#include "parsing/parsing.hpp"
 #include "client/client.hpp"
 #include "server/server.hpp"
 #include "utils/prompt.hpp"

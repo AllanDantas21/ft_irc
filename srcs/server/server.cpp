@@ -43,8 +43,7 @@ void Server::ReceiveNewData(int fd)
 
     else { //-> imprime os dados recebidos
         buff[bytes] = '\0';
-        std::cout << YEL << "Cliente <" << fd << "> Dados: " << WHI << buff;
-        //aqui você pode adicionar seu código para processar os dados recebidos: parsear, verificar, autenticar, lidar com o comando, etc...
+        MainParser(buff);
     }
 }
 
