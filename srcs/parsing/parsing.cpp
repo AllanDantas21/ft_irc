@@ -1,5 +1,5 @@
 #include "../../incs/ircserv.hpp"
 
-void MainParser(char *buffer) { 
-    std::cout << buffer << std::endl;
+void MainParser(char *buffer) {
+    (void)buffer;
 }

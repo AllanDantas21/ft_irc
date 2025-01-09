@@ -9,6 +9,7 @@ private:
     int Port;
     int ServerSocketFd;
     static bool HasSignal;
+    std::string password;
     std::vector<Client> clients;
     std::vector<struct pollfd> fds;
 public:

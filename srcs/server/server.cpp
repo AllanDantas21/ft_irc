@@ -105,7 +105,7 @@ void Server::ClearClients(int fd) { //-> limpa os clientes
 }
 
 void Server::ServerInit(int port, std::string password) {
-    (void) password;
+    this->password = password;
     this->Port = port;
     SerSocket();
 
