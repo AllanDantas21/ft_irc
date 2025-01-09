@@ -29,14 +29,14 @@ ft_irc is a project for the 42 curriculum that involves creating an IRC (Interne
 
 3. Run the server:
     ```sh
-    ./ircserv
+    ./ircserv <port> <password>
     ```
 
 ## Usage
 
 1. Connect to the server using an IRC client (e.g., nc -> Netcat):
     ```sh
-    /nc localhost 4444
+    /nc <localhost> <port>
     ```
 
 ## Project Structure
