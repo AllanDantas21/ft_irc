@@ -6,14 +6,19 @@
 class Client //-> classe para cliente
 {
 private:
+	std::string nickname; //-> nickname do cliente
+	std::string username; //-> username do cliente
 	int Fd; //-> descritor de arquivo do cliente
 	std::string IPadd; //-> endereço IP do cliente
 public:
-	Client(); //-> construtor padrão
-	int GetFd();//-> getter para fd
+	Client();
+	~Client();
+	int GetFd();
 
-	void SetFd(int fd); //-> setter para fd
-	void setIpAdd(std::string ipadd); //-> setter para ipadd
+	void SetNickname(std::string nick);
+	void SetUsername(std::string user);
+	void SetFd(int fd);
+	void setIpAdd(std::string ipadd);
 };
 
 #endif

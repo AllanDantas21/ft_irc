@@ -2,9 +2,14 @@
 
 bool Server::HasSignal = false;
 
-void Server::AcceptNewClient()
-{
-    Client cli; //-> cria um novo cliente
+Server::Server() {
+    ServerSocketFd = -1;
+}
+
+Server::~Server() {}
+
+void Server::AcceptNewClient() {
+    Client cli;
     struct sockaddr_in cliadd;
     struct pollfd NewPoll;
     socklen_t len = sizeof(cliadd);
@@ -12,7 +17,6 @@ void Server::AcceptNewClient()
     int incofd = accept(ServerSocketFd, (sockaddr *)&(cliadd), &len);
     if (incofd == -1)
         {std::cout << "accept() falhou" << std::endl; return;}
-
     if (fcntl(incofd, F_SETFL, O_NONBLOCK) == -1)
         {std::cout << "fcntl() falhou" << std::endl; return;}
 
@@ -28,8 +32,7 @@ void Server::AcceptNewClient()
     std::cout << GRE << "Cliente <" << incofd << "> Conectado" << WHI << std::endl;
 }
 
-void Server::ReceiveNewData(int fd)
-{
+void Server::ReceiveNewData(int fd) {
     char buff[1024];
     memset(buff, 0, sizeof(buff));
 
@@ -46,14 +49,13 @@ void Server::ReceiveNewData(int fd)
     }
 }
 
-void Server::SignalHandler(int signum)
-{
+void Server::SignalHandler(int signum) {
     (void)signum;
     std::cout << std::endl << "Sinal Recebido!" << std::endl;
     Server::HasSignal = true;
 }
 
-void Server::CloseFds(){
+void Server::CloseFds() {
     for (size_t i = 0; i < clients.size(); i++){
         std::cout << RED << "Cliente <" << clients[i].GetFd() << "> Desconectado" << WHI << std::endl;
         close(clients[i].GetFd());
@@ -64,8 +66,7 @@ void Server::CloseFds(){
     }
 }
 
-void Server::SerSocket()
-{
+void Server::SerSocket() {
     struct sockaddr_in add;
     struct pollfd NewPoll;
     add.sin_family = AF_INET; //-> define a família de endereços como IPv4
@@ -92,7 +93,7 @@ void Server::SerSocket()
     fds.push_back(NewPoll);
 }
 
-void Server::ClearClients(int fd){ //-> limpa os clientes
+void Server::ClearClients(int fd) { //-> limpa os clientes
     for (size_t i = 0; i < fds.size(); i++){
         if (fds[i].fd == fd)
             {fds.erase(fds.begin() + i); break;}
@@ -103,28 +104,26 @@ void Server::ClearClients(int fd){ //-> limpa os clientes
     }
 }
 
-void Server::ServerInit(int port, std::string password)
-{
+void Server::ServerInit(int port, std::string password) {
     (void) password;
     this->Port = port;
     SerSocket();
 
     std::cout << "Esperando conexão...\n";
 
-        while (Server::HasSignal == false){
-            if ((poll(&fds[0],fds.size(),-1) == -1) && Server::HasSignal == false)
-                throw(std::runtime_error("poll() falhou"));
-
-            for (size_t i = 0; i < fds.size(); i++){
-                if (fds[i].revents & POLLIN) //-> verifica se há dados para ler
-                {
-                    if (fds[i].fd == ServerSocketFd)
-                        AcceptNewClient();
-                    else
-                        ReceiveNewData(fds[i].fd);
-                }
+    while (Server::HasSignal == false){
+        if ((poll(&fds[0],fds.size(),-1) == -1) && Server::HasSignal == false)
+            throw(std::runtime_error("poll() falhou"));
+            
+        for (size_t i = 0; i < fds.size(); i++){
+            if (fds[i].revents & POLLIN) //-> verifica se há dados para ler
+            {
+                if (fds[i].fd == ServerSocketFd)
+                    AcceptNewClient();
+                else
+                    ReceiveNewData(fds[i].fd);
             }
         }
-        CloseFds();
     }
-
+    CloseFds();
+}

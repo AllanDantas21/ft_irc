@@ -8,21 +8,22 @@ class Server
 private:
     int Port;
     int ServerSocketFd;
-    static bool HasSignal; //-> booleano estático para sinal
-    std::vector<Client> clients; //-> vetor de clientes
-    std::vector<struct pollfd> fds; //-> vetor de pollfd
+    static bool HasSignal;
+    std::vector<Client> clients;
+    std::vector<struct pollfd> fds;
 public:
-    Server(){ServerSocketFd = -1;} //-> construtor padrão
+    Server();
+    ~Server();
 
     void ServerInit(int port, std::string password); //-> inicialização do servidor
     void SerSocket(); //-> criação do socket do servidor
-    void AcceptNewClient(); //-> aceitar novo cliente
-    void ReceiveNewData(int fd); //-> receber novos dados de um cliente registrado
+    void AcceptNewClient();
+    void ReceiveNewData(int fd);
 
-    static void SignalHandler(int signum); //-> manipulador de sinal
+    static void SignalHandler(int signum);
  
-    void CloseFds(); //-> fechar descritores de arquivo
-    void ClearClients(int fd); //-> limpar clientes
+    void CloseFds();
+    void ClearClients(int fd);
 };
 
 #endif
