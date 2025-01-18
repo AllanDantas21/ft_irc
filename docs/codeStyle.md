@@ -113,5 +113,3 @@ int MyClass::add(int a, int b) {
     return a + b;
 }
 ```
-
-Seguir este guia de estilo ajudará a garantir que o código do projeto seja consistente e de alta qualidade. Certifique-se de revisar e atualizar este documento conforme necessário para atender às necessidades do seu projeto e equipe.
