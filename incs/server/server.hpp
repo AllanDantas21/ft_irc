@@ -25,6 +25,14 @@ public:
  
     void CloseFds();
     void ClearClients(int fd);
+    
+    void SetFd(int fd);
+    void SetPort(int port);
+    void SetPassword(const std::string &password);
+
+    void SetupSocketOptions();
+    void BindAndListenSocket(struct sockaddr_in &add);
+    void HandlePollEvents();
 };
 
 #endif

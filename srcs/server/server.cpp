@@ -2,10 +2,7 @@
 
 bool Server::HasSignal = false;
 
-Server::Server() {
-    ServerSocketFd = -1;
-}
-
+Server::Server() : ServerSocketFd(-1) {}
 Server::~Server() {}
 
 void Server::AcceptNewClient() {
@@ -15,10 +12,14 @@ void Server::AcceptNewClient() {
     socklen_t len = sizeof(cliadd);
 
     int incofd = accept(ServerSocketFd, (sockaddr *)&(cliadd), &len);
-    if (incofd == -1)
-        {std::cout << "accept() falhou" << std::endl; return;}
-    if (fcntl(incofd, F_SETFL, O_NONBLOCK) == -1)
-        {std::cout << "fcntl() falhou" << std::endl; return;}
+    if (incofd == -1) {
+        std::cout << "accept() falhou" << std::endl;
+        return;
+    }
+    if (fcntl(incofd, F_SETFL, O_NONBLOCK) == -1) {
+        std::cout << "fcntl() falhou" << std::endl;
+        return;
+    }
 
     NewPoll.fd = incofd;
     NewPoll.events = POLLIN;
@@ -36,14 +37,13 @@ void Server::ReceiveNewData(int fd) {
     char buff[1024];
     memset(buff, 0, sizeof(buff));
 
-    ssize_t bytes = recv(fd, buff, sizeof(buff) - 1 , 0);
+    ssize_t bytes = recv(fd, buff, sizeof(buff) - 1, 0);
 
-    if (bytes <= 0){ //-> verifica se o cliente desconectou
+    if (bytes <= 0) {
         std::cout << RED << "Cliente <" << fd << "> Desconectado" << WHI << std::endl;
         ClearClients(fd);
         close(fd);
-    }
-    else {
+    } else {
         buff[bytes] = '\0';
         MainParser(buff);
     }
@@ -56,36 +56,44 @@ void Server::SignalHandler(int signum) {
 }
 
 void Server::CloseFds() {
-    for (size_t i = 0; i < clients.size(); i++){
+    for (size_t i = 0; i < clients.size(); i++) {
         std::cout << RED << "Cliente <" << clients[i].GetFd() << "> Desconectado" << WHI << std::endl;
         close(clients[i].GetFd());
     }
-    if (ServerSocketFd != -1){
+    if (ServerSocketFd != -1) {
         std::cout << RED << "Servidor <" << ServerSocketFd << "> Desconectado" << WHI << std::endl;
         close(ServerSocketFd);
     }
 }
 
-void Server::SerSocket() {
-    struct sockaddr_in add;
-    struct pollfd NewPoll;
-    add.sin_family = AF_INET; //-> define a família de endereços como IPv4
-    add.sin_port = htons(this->Port);
-    add.sin_addr.s_addr = INADDR_ANY;
-
-    ServerSocketFd = socket(AF_INET, SOCK_STREAM, 0); //-> cria o socket do servidor
-    if (ServerSocketFd == -1)
-        throw(std::runtime_error("falha ao criar socket"));
-
+void Server::SetupSocketOptions() {
     int en = 1;
     if (setsockopt(ServerSocketFd, SOL_SOCKET, SO_REUSEADDR, &en, sizeof(en)) == -1) 
         throw(std::runtime_error("falha ao definir opção (SO_REUSEADDR) no socket"));
     if (fcntl(ServerSocketFd, F_SETFL, O_NONBLOCK) == -1)
         throw(std::runtime_error("falha ao definir opção (O_NONBLOCK) no socket"));
+}
+
+void Server::BindAndListenSocket(struct sockaddr_in &add) {
     if (bind(ServerSocketFd, (struct sockaddr *)&add, sizeof(add)) == -1)
         throw(std::runtime_error("falha ao vincular socket"));
     if (listen(ServerSocketFd, SOMAXCONN) == -1)
         throw(std::runtime_error("falha no listen()"));
+}
+
+void Server::SerSocket() {
+    struct sockaddr_in add;
+    struct pollfd NewPoll;
+    add.sin_family = AF_INET;
+    add.sin_port = htons(this->Port);
+    add.sin_addr.s_addr = INADDR_ANY;
+
+    ServerSocketFd = socket(AF_INET, SOCK_STREAM, 0);
+    if (ServerSocketFd == -1)
+        throw(std::runtime_error("falha ao criar socket"));
+
+    SetupSocketOptions();
+    BindAndListenSocket(add);
 
     NewPoll.fd = ServerSocketFd;
     NewPoll.events = POLLIN;
@@ -93,14 +101,29 @@ void Server::SerSocket() {
     fds.push_back(NewPoll);
 }
 
-void Server::ClearClients(int fd) { //-> limpa os clientes
-    for (size_t i = 0; i < fds.size(); i++){
-        if (fds[i].fd == fd)
-            {fds.erase(fds.begin() + i); break;}
+void Server::ClearClients(int fd) {
+    for (size_t i = 0; i < fds.size(); i++) {
+        if (fds[i].fd == fd) {
+            fds.erase(fds.begin() + i);
+            break;
+        }
     }
-    for (size_t i = 0; i < clients.size(); i++){
-        if (clients[i].GetFd() == fd)
-            {clients.erase(clients.begin() + i); break;}
+    for (size_t i = 0; i < clients.size(); i++) {
+        if (clients[i].GetFd() == fd) {
+            clients.erase(clients.begin() + i);
+            break;
+        }
+    }
+}
+
+void Server::HandlePollEvents() {
+    for (size_t i = 0; i < fds.size(); i++) {
+        if (fds[i].revents & POLLIN) {
+            if (fds[i].fd == ServerSocketFd)
+                AcceptNewClient();
+            else
+                ReceiveNewData(fds[i].fd);
+        }
     }
 }
 
@@ -111,19 +134,15 @@ void Server::ServerInit(int port, std::string password) {
 
     std::cout << "Esperando conexão...\n";
 
-    while (Server::HasSignal == false){
-        if ((poll(&fds[0],fds.size(),-1) == -1) && Server::HasSignal == false)
+    while (Server::HasSignal == false) {
+        if ((poll(&fds[0], fds.size(), -1) == -1) && Server::HasSignal == false)
             throw(std::runtime_error("poll() falhou"));
-            
-        for (size_t i = 0; i < fds.size(); i++){
-            if (fds[i].revents & POLLIN) //-> verifica se há dados para ler
-            {
-                if (fds[i].fd == ServerSocketFd)
-                    AcceptNewClient();
-                else
-                    ReceiveNewData(fds[i].fd);
-            }
-        }
+
+        HandlePollEvents();
     }
     CloseFds();
 }
+
+void Server::SetFd(int fd) { this->ServerSocketFd = fd; }
+void Server::SetPort(int port) { this->Port = port; }
+void Server::SetPassword(const std::string &password) { this->password = password; }
