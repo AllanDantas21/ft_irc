@@ -8,7 +8,7 @@ Use CamelCase para nomes de classes.
 Exemplos: `MyClass`, `EmployeeData`.
 
 ### Funções
-Use camelCase para nomes de funções. ( Primeira letra minuscula)
+Use camelCase para nomes de funções. (Primeira letra minúscula)  
 Exemplos: `calculateTotal()`, `getUserName()`.
 
 ### Variáveis
@@ -20,9 +20,8 @@ Use UPPER_CASE com underscores para constantes.
 Exemplos: `MAX_COUNT`, `DEFAULT_TIMEOUT`.
 
 ## Estrutura de Arquivos
-Reforçando que usamos a arquitetura de espelho (Mirror Arquiteture),
-Para cada arquivo .CPP em /srcs, devera ter o respectivo .HPP em /incs.
- 
+Reforçando que usamos a arquitetura de espelho, para cada arquivo .CPP em /srcs, deverá ter o respectivo .HPP em /incs.
+
 Cada classe deve ser definida em um arquivo `.hpp` e implementada em um arquivo `.cpp`.  
 Use o nome da classe para nomear os arquivos.  
 Exemplo: `MyClass.hpp`, `MyClass.cpp`.
@@ -33,7 +32,7 @@ Exemplo: `MyClass.hpp`, `MyClass.cpp`.
 Use 4 espaços para indentação.
 
 ### Chaves
-As chaves de abertura `{` devem estar na mesma linha da declaração. (com um espaço na abertura)
+As chaves de abertura `{` devem estar na mesma linha da declaração (com um espaço na abertura).  
 A chave de fechamento `}` deve estar alinhada com a linha da declaração.
 
 ```cpp
@@ -73,10 +72,22 @@ Use `/* */` para comentários de bloco.
  */
 ```
 
+## Classes
+
+### Construtores
+Sempre que possível, use lista de inicialização em construtores.  
+Exemplo: `MyClass() : foo() {}`
+
+### Getters e Setters
+Implemente getters e setters em apenas uma linha.  
+Exemplo: `getFoo() { return this->foo; }`
+
 ## Boas Práticas
 - Evite funções e classes muito grandes. (Podemos deixar 70 linhas como um "limite")
 - Prefira variáveis e funções com nomes descritivos.
 - Evite o uso de números mágicos. Use constantes com nomes significativos.
+- Mantenha o código simples e claro. Evite complexidade desnecessária.
+- Faça revisões de código regularmente para garantir a qualidade e consistência.
 
 ## Exemplo de Código
 
@@ -101,9 +112,7 @@ public:
 // MyClass.cpp
 #include "MyClass.h"
 
-MyClass::MyClass() {
-    value = 0;
-}
+MyClass::MyClass() : value(0) {}
 
 MyClass::~MyClass() {
     // Destrutor
