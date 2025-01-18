@@ -1,5 +1,9 @@
 # FT_IRC
 
+## DEVELOPMENT
+Veja o estilo de código em:
+[codeStyle.md](./docs/codeStyle.md)
+
 ## Introduction
 
 ft_irc is a project for the 42 curriculum that involves creating an IRC (Internet Relay Chat) server. The goal of this project is to understand the basics of network programming and the IRC protocol.
