@@ -1,4 +1,4 @@
-#include "../../incs/ircserv.hpp"
+#include "../incs/ircserv.hpp"
 
 bool Server::HasSignal = false;
 

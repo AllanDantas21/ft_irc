@@ -1,4 +1,4 @@
-#include "../../incs/ircserv.hpp"
+#include "../incs/ircserv.hpp"
 
 Client::Client(){};
 Client::~Client(){};

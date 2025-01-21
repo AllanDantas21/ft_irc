@@ -1,7 +1,7 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
-#include "../ircserv.hpp"
+#include "ircserv.hpp"
 
 class Server
 {
