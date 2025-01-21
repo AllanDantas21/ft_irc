@@ -11,11 +11,14 @@ void Server::AcceptNewClient() {
     struct pollfd NewPoll;
     socklen_t len = sizeof(cliadd);
 
+    memset(&cliadd, 0, sizeof(cliadd));
     int incofd = accept(ServerSocketFd, (sockaddr *)&(cliadd), &len);
+
     if (incofd == -1) {
         std::cout << "accept() falhou" << std::endl;
         return;
     }
+
     if (fcntl(incofd, F_SETFL, O_NONBLOCK) == -1) {
         std::cout << "fcntl() falhou" << std::endl;
         return;
@@ -35,8 +38,8 @@ void Server::AcceptNewClient() {
 
 void Server::ReceiveNewData(int fd) {
     char buff[1024];
-    memset(buff, 0, sizeof(buff));
 
+    memset(buff, 0, sizeof(buff));
     ssize_t bytes = recv(fd, buff, sizeof(buff) - 1, 0);
 
     if (bytes <= 0) {
@@ -138,7 +141,7 @@ void Server::ServerInit(int port, std::string password) {
         if ((poll(&fds[0], fds.size(), -1) == -1) && Server::HasSignal == false)
             throw(std::runtime_error("poll() falhou"));
 
-        HandlePollEvents();
+        this->HandlePollEvents();
     }
     CloseFds();
 }

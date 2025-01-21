@@ -14,6 +14,9 @@ public:
 	~Client();
 
 	int GetFd();
+	std::string getNickname();
+	std::string getUsername();
+	std::string getIpAdd();
 	void SetNickname(std::string nick);
 	void SetUsername(std::string user);
 	void SetFd(int fd);
