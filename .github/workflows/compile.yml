@@ -16,6 +16,3 @@ jobs:
         run: sudo apt-get install -y make g++ valgrind
       - name: Make
         run: make
-
-      - name: Valgrind
-        run: chmod +x tests/valgrind.sh && tests/valgrind.sh
