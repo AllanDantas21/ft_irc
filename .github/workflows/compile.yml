@@ -18,4 +18,4 @@ jobs:
         run: make
 
       - name: Valgrind
-        run: tests/valgrind.sh
+        run: chmod +x tests/valgrind.sh && tests/valgrind.sh
