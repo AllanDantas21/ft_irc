@@ -16,3 +16,7 @@ jobs:
         run: sudo apt-get install -y make g++
       - name: Make
         run: make
+
+      - name: Run valgrind to check for memory leaks
+        run: |
+          valgrind --leak-check=full --track-origins=yes --error-exitcode=1 ./ircserver
