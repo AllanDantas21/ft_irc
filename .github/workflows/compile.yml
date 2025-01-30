@@ -17,6 +17,5 @@ jobs:
       - name: Make
         run: make
 
-      - name: Run valgrind to check for memory leaks
-        run: |
-          valgrind --leak-check=full --track-origins=yes --error-exitcode=1 ./ircserver || echo "ircserver not found, skipping valgrind check"
+      - name: Valgrind
+        run: tests/valgrind.sh
