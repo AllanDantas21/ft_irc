@@ -27,4 +27,4 @@ jobs:
         run: make
         
       - name: Rodar teste de vazamento de memória com Valgrind
-        run: ./.github/workflows/tests/test_valgrind.sh
+        run: ./tests/test_valgrind.sh
