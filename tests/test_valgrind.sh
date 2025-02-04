@@ -9,7 +9,7 @@ valgrind --leak-check=full --log-file=valgrind.log ../ircserv 5555 pass &
 
 SERVER_PID=$!
 
-sleep 60
+sleep 10
 
 kill $SERVER_PID
 
