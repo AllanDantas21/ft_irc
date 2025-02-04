@@ -1,6 +1,7 @@
 #include "../incs/ircserv.hpp"
 
 int main(int argc, char **argv) {
+    malloc(40); // TESTE DO VALGRIND
     Server ser;
     if (argc != 3) {
         std::cerr << "Uso: " << argv[0] << " <porta> <senha>" << std::endl; 
