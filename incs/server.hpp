@@ -2,6 +2,7 @@
 #define SERVER_HPP
 
 #include "ircserv.hpp"
+#include "client.hpp"
 
 class Server
 {
@@ -16,8 +17,8 @@ public:
     Server();
     ~Server();
 
-    void ServerInit(int port, std::string password); //-> inicialização do servidor
-    void SerSocket(); //-> criação do socket do servidor
+    void ServerInit(int port, std::string password);
+    void SerSocket();
     void AcceptNewClient();
     void ReceiveNewData(int fd);
 
@@ -29,7 +30,9 @@ public:
     void SetFd(int fd);
     void SetPort(int port);
     void SetPassword(const std::string &password);
-
+    std::string GetPassword();
+    int GetFd();
+    
     void SetupSocketOptions();
     void BindAndListenSocket(struct sockaddr_in &add);
     void HandlePollEvents();

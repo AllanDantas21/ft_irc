@@ -48,7 +48,7 @@ void Server::ReceiveNewData(int fd) {
         close(fd);
     } else {
         buff[bytes] = '\0';
-        MainParser(buff);
+        MainParser(buff, *this, clients[fd]);
     }
 }
 
@@ -149,3 +149,5 @@ void Server::ServerInit(int port, std::string password) {
 void Server::SetFd(int fd) { this->ServerSocketFd = fd; }
 void Server::SetPort(int port) { this->Port = port; }
 void Server::SetPassword(const std::string &password) { this->password = password; }
+std::string Server::GetPassword() { return this->password; }
+int Server::GetFd() { return this->ServerSocketFd; }

@@ -1,6 +1,6 @@
 # FT_IRC
 
-## DEVELOPMENT
+## Development
 Veja o estilo de código em:
 [codeStyle.md](./docs/codeStyle.md)
 

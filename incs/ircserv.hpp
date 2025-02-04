@@ -13,11 +13,14 @@
 #include <csignal>
 #include <cstdlib>
 #include <cstring>
+#include <sstream>
 
 #include "parsing.hpp"
 #include "client.hpp"
 #include "server.hpp"
 #include "utils/prompt.hpp"
+
+class Server;
 
 //_______________________________________________________//
 #define RED "\e[1;31m" 

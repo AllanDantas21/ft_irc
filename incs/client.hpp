@@ -5,8 +5,8 @@
 
 class Client {
 private:
-	std::string nickname; //-> nickname
-	std::string username; //-> username
+	std::string nickname;
+	std::string username;
 	std::string IPadd; //-> endereço IP
 	int Fd;
 public:
@@ -21,6 +21,7 @@ public:
 	void SetUsername(std::string user);
 	void SetFd(int fd);
 	void setIpAdd(std::string ipadd);
+	void SendMessage(const std::string &message);
 };
 
 #endif
