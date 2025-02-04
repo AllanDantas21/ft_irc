@@ -5,7 +5,7 @@ if ! command -v valgrind &> /dev/null; then
     exit 1
 fi
 
-valgrind --leak-check=full --error-exitcode=1 ./ircserv 5555 pass > /dev/null 2>&1
+timeout 5 valgrind --leak-check=full --error-exitcode=1 ./ircserv 5555 pass > /dev/null 2>&1
 RESULTADO=$?
 
 if [ $RESULTADO -eq 0 ]; then
