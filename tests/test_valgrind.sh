@@ -5,7 +5,7 @@ if ! command -v valgrind &> /dev/null; then
     exit 1
 fi
 
-valgrind --leak-check=full --log-file=valgrind.log ../ircserv 5555 pass &
+valgrind --leak-check=full --log-file=valgrind.log ./ircserv 5555 pass &
 
 SERVER_PID=$!
 
