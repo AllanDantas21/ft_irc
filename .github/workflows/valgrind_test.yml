@@ -1,0 +1,29 @@
+name: Valgrind Memory Leak Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  memory-leak:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Instalar dependências
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y valgrind timeout
+
+      - name: Conceder permissão de execução
+        run: chmod +x test_valgrind.sh
+        
+      - name: Compilar o projeto
+        run: make
+        
+      - name: Rodar teste de vazamento de memória com Valgrind
+        run: ./test_valgrind.sh 
