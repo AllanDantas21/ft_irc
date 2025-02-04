@@ -5,14 +5,7 @@ if ! command -v valgrind &> /dev/null; then
     exit 1
 fi
 
-make
-
-if [ $? -ne 0 ]; then
-    echo "Erro na compilação."
-    exit 1
-fi
-
-valgrind --leak-check=full --error-exitcode=1 ./ft_ircserv 5555 pass > /dev/null 2>&1
+valgrind --leak-check=full --error-exitcode=1 ./ircserv 5555 pass > /dev/null 2>&1
 RESULTADO=$?
 
 if [ $RESULTADO -eq 0 ]; then
