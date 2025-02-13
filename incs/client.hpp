@@ -5,9 +5,9 @@
 
 class Client {
 private:
-	std::string nickname; //-> nickname
-	std::string username; //-> username
-	std::string IPadd; //-> endereço IP
+	std::string nickname;
+	std::string username;
+	std::string IPadd; ip;
 	int Fd;
 public:
 	Client();

@@ -16,8 +16,8 @@ public:
     Server();
     ~Server();
 
-    void ServerInit(int port, std::string password); //-> inicialização do servidor
-    void SerSocket(); //-> criação do socket do servidor
+    void ServerInit(int port, std::string password);
+    void SerSocket();
     void AcceptNewClient();
     void ReceiveNewData(int fd);
 
