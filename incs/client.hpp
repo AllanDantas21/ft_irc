@@ -7,7 +7,7 @@ class Client {
 private:
 	std::string nickname;
 	std::string username;
-	std::string IPadd; ip;
+	std::string IPadd; // ip address
 	int Fd;
 public:
 	Client();
