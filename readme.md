@@ -1,5 +1,8 @@
 # FT_IRC
 
+## Links de estudos
+[Estudos](./docs/link_utils.md)
+
 ## DEVELOPMENT
 Veja o estilo de código em:
 [codeStyle.md](./docs/codeStyle.md)
