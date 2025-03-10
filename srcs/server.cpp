@@ -148,10 +148,6 @@ void Server::ServerInit(int port, std::string password) {
     CloseFds();
 }
 
-void Server::SetFd(int fd) { this->ServerSocketFd = fd; }
-void Server::SetPort(int port) { this->Port = port; }
-void Server::SetPassword(const std::string &password) { this->password = password; }
-
 void Server::SendToClient(int fd, const std::string& message)
 {
     send(fd, message.c_str(), message.length(), 0);
@@ -162,3 +158,7 @@ void Server::SendWelcomeMessage(int fd)
     std::string welcomeMsg = "Bem vindo ao nosso IRC Server!\r\nPor favor, autentique-se com o comando PASS.\r\n";
     SendToClient(fd, welcomeMsg);
 }
+
+void Server::SetFd(int fd) { this->ServerSocketFd = fd; }
+void Server::SetPort(int port) { this->Port = port; }
+void Server::SetPassword(const std::string &password) { this->password = password; }
