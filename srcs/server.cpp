@@ -34,6 +34,8 @@ void Server::AcceptNewClient() {
     fds.push_back(NewPoll);
 
     std::cout << GRE << "Cliente <" << incofd << "> Conectado" << WHI << std::endl;
+
+    SendWelcomeMessage(incofd); // Send welcome message to the newly connected client
 }
 
 void Server::ReceiveNewData(int fd) {
@@ -149,3 +151,14 @@ void Server::ServerInit(int port, std::string password) {
 void Server::SetFd(int fd) { this->ServerSocketFd = fd; }
 void Server::SetPort(int port) { this->Port = port; }
 void Server::SetPassword(const std::string &password) { this->password = password; }
+
+void Server::SendToClient(int fd, const std::string& message)
+{
+    send(fd, message.c_str(), message.length(), 0);
+}
+
+void Server::SendWelcomeMessage(int fd)
+{
+    std::string welcomeMsg = "Bem vindo ao nosso IRC Server!\r\nPor favor, autentique-se com o comando PASS.\r\n";
+    SendToClient(fd, welcomeMsg);
+}

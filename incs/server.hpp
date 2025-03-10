@@ -33,6 +33,11 @@ public:
     void SetupSocketOptions();
     void BindAndListenSocket(struct sockaddr_in &add);
     void HandlePollEvents();
+
+    Client* FindClientByFd(int fd);
+    void HandleAuthentication(Client* client, const char* message);
+    void SendToClient(int fd, const std::string& message);
+    void SendWelcomeMessage(int fd);
 };
 
 #endif
