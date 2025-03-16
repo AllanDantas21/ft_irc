@@ -5,28 +5,20 @@ bool Server::HasSignal = false;
 Server::Server() : ServerSocketFd(-1) {}
 Server::~Server() {}
 
-void Server::WaitConnection() {
-    while (Server::HasSignal == false) {
-        if ((poll(&fds[0], fds.size(), -1) == -1) && Server::HasSignal == false)
-            throw(std::runtime_error("poll() falhou"));
-        this->HandlePollEvents();
-    }
+void Server::ServerInit(int port, std::string password) {
+    SetAtributes(port, password);
+    ServerConfig();
+
+    std::cout << "Iniciando servidor na porta " << port << "..." << std::endl;
+    std::cout << "Esperando conexão...\n";
+
+    WaitConnection();
+    Server::CloseFds();
 }
 
 void Server::SetAtributes(int port, std::string password) {
     SetPort(port);
     SetPassword(password);
-}
-
-void Server::ServerInit(int port, std::string password) {
-    SetAtributes(port, password);
-    ServerConfig();
-    std::cout << "Iniciando servidor na porta " << port << "..." << std::endl;
-
-    std::cout << "Esperando conexão...\n";
-
-    WaitConnection();
-    Server::CloseFds();
 }
 
 void Server::ServerConfig() {
@@ -49,6 +41,36 @@ void Server::ServerConfig() {
     fds.push_back(NewPoll);
 }
 
+void Server::WaitConnection() {
+    while (Server::HasSignal == false) {
+        if ((poll(&fds[0], fds.size(), -1) == -1) && Server::HasSignal == false)
+            throw(std::runtime_error("poll() falhou"));
+        this->HandlePollEvents();
+    }
+}
+
+void Server::HandlePollEvents() {
+    for (size_t i = 0; i < fds.size(); i++) {
+        if (fds[i].revents & POLLIN) {
+            if (fds[i].fd == ServerSocketFd)
+                AcceptNewClient();
+            else
+                ReceiveNewData(fds[i].fd);
+        }
+    }
+}
+
+void Server::CloseFds() {
+    for (size_t i = 0; i < clients.size(); i++) {
+        std::cout << RED << "Cliente <" << clients[i].GetFd() << "> Desconectado" << WHI << std::endl;
+        close(clients[i].GetFd());
+    }
+    if (ServerSocketFd != -1) {
+        std::cout << RED << "Servidor <" << ServerSocketFd << "> Desconectado" << WHI << std::endl;
+        close(ServerSocketFd);
+    }
+}
+
 void Server::AcceptNewClient() {
     struct sockaddr_in cliadd;
     struct pollfd NewPoll;
@@ -67,7 +89,7 @@ void Server::AcceptNewClient() {
     NewPoll.events = POLLIN;
     NewPoll.revents = 0;
 
-    Client cli;  // This default constructor is causing the issue
+    Client cli;
     cli.SetFd(incofd);
     cli.setIpAdd(inet_ntoa((cliadd.sin_addr)));
     clients.push_back(cli);
@@ -97,17 +119,6 @@ void Server::SignalHandler(int signum) {
     (void)signum;
     std::cout << std::endl << "Sinal Recebido!" << std::endl;
     Server::HasSignal = true;
-}
-
-void Server::CloseFds() {
-    for (size_t i = 0; i < clients.size(); i++) {
-        std::cout << RED << "Cliente <" << clients[i].GetFd() << "> Desconectado" << WHI << std::endl;
-        close(clients[i].GetFd());
-    }
-    if (ServerSocketFd != -1) {
-        std::cout << RED << "Servidor <" << ServerSocketFd << "> Desconectado" << WHI << std::endl;
-        close(ServerSocketFd);
-    }
 }
 
 void Server::SetupSocketOptions() {
@@ -144,17 +155,6 @@ void Server::CloseFd(int fd) {
         if (fds[i].fd == fd) {
             fds.erase(fds.begin() + i);
             break;
-        }
-    }
-}
-
-void Server::HandlePollEvents() {
-    for (size_t i = 0; i < fds.size(); i++) {
-        if (fds[i].revents & POLLIN) {
-            if (fds[i].fd == ServerSocketFd)
-                AcceptNewClient();
-            else
-                ReceiveNewData(fds[i].fd);
         }
     }
 }
