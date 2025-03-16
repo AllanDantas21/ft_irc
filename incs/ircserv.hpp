@@ -13,6 +13,8 @@
 #include <csignal>
 #include <cstdlib>
 #include <cstring>
+#include <stdexcept>
+#include <string>
 
 #include "parsing.hpp"
 #include "client.hpp"
@@ -25,5 +27,31 @@
 #define GRE "\e[1;32m"
 #define YEL "\e[1;33m"
 //______________________________________________________//
+
+class ArgumentValidator {
+public:
+    static void validate(int count, char** args);
+};
+
+class SignalConfigurator {
+public:
+    static void configure();
+};
+
+class ServerController {
+private:
+    Server server;
+
+public:
+    void execute(int argc, char** argv);
+
+private:
+    void validatePort(int portValue);
+    void prepareExecution(int argc, char** argv);
+    void handleError(const std::exception& e);
+    void announceShutdown();
+};
+
+int main(int argc, char **argv);
 
 #endif
