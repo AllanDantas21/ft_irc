@@ -17,13 +17,15 @@ public:
     ~Server();
 
     void ServerInit(int port, std::string password);
-    void SerSocket();
+    void ServerConfig();
     void AcceptNewClient();
     void ReceiveNewData(int fd);
 
     static void SignalHandler(int signum);
  
     void CloseFds();
+    void CloseFd(int fd);
+    void CloseClientFd(int fd);
     void ClearClients(int fd);
     
     void SetFd(int fd);
