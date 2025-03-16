@@ -1,7 +1,10 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
+#pragma once
 
 #include "ircserv.hpp"
+
+class Client;
 
 class Server
 {
@@ -18,6 +21,7 @@ public:
 
     void ServerInit(int port, std::string password);
     void ServerConfig();
+    void WaitConnection();
     void AcceptNewClient();
     void ReceiveNewData(int fd);
 
@@ -31,6 +35,7 @@ public:
     void SetFd(int fd);
     void SetPort(int port);
     void SetPassword(const std::string &password);
+    void SetAtributes(int port, std::string password);
 
     void SetupSocketOptions();
     void BindAndListenSocket(struct sockaddr_in &add);

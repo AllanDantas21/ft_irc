@@ -1,5 +1,6 @@
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
+#pragma once
 
 #include "ircserv.hpp"
 
@@ -8,6 +9,7 @@ private:
 	std::string nickname;
 	std::string username;
 	std::string IPadd;
+	bool authenticated;
 	int Fd;
 public:
 	Client();
@@ -21,6 +23,7 @@ public:
 	void SetUsername(std::string user);
 	void SetFd(int fd);
 	void setIpAdd(std::string ipadd);
+	void SetAuthenticated(bool auth);
 };
 
 #endif

@@ -10,13 +10,16 @@ int main(int argc, char **argv) {
     try {
         signal(SIGINT, Server::SignalHandler);
         signal(SIGQUIT, Server::SignalHandler);
-        if (std::atoi(argv[1]) < 1024) {
-            throw std::runtime_error("Porta inválida");
+        
+        int port = std::atoi(argv[1]);
+        if (port < 1024 || port > 65535) {
+            throw std::runtime_error("Porta inválida: deve estar entre 1024 e 65535");
         }
-        ser.ServerInit(std::atoi(argv[1]), argv[2]);
+
+        ser.ServerInit(port, argv[2]);
     } catch (const std::exception& e) {
         ser.CloseFds();
-        std::cerr << e.what() << std::endl;
+        std::cerr << "Erro: " << e.what() << std::endl;
     }
     std::cout << "O Servidor Foi Fechado!" << std::endl;
     return 0;

@@ -5,18 +5,27 @@ bool Server::HasSignal = false;
 Server::Server() : ServerSocketFd(-1) {}
 Server::~Server() {}
 
-void Server::ServerInit(int port, std::string password) {
-    ServerConfig();
-    this->password = password;
-    this->Port = port;
-
-    std::cout << "Esperando conexão...\n";
-
+void Server::WaitConnection() {
     while (Server::HasSignal == false) {
         if ((poll(&fds[0], fds.size(), -1) == -1) && Server::HasSignal == false)
             throw(std::runtime_error("poll() falhou"));
         this->HandlePollEvents();
     }
+}
+
+void Server::SetAtributes(int port, std::string password) {
+    SetPort(port);
+    SetPassword(password);
+}
+
+void Server::ServerInit(int port, std::string password) {
+    SetAtributes(port, password);
+    ServerConfig();
+    std::cout << "Iniciando servidor na porta " << port << "..." << std::endl;
+
+    std::cout << "Esperando conexão...\n";
+
+    WaitConnection();
     Server::CloseFds();
 }
 
@@ -41,7 +50,6 @@ void Server::ServerConfig() {
 }
 
 void Server::AcceptNewClient() {
-    Client cli;
     struct sockaddr_in cliadd;
     struct pollfd NewPoll;
     socklen_t len = sizeof(cliadd);
@@ -59,6 +67,7 @@ void Server::AcceptNewClient() {
     NewPoll.events = POLLIN;
     NewPoll.revents = 0;
 
+    Client cli;  // This default constructor is causing the issue
     cli.SetFd(incofd);
     cli.setIpAdd(inet_ntoa((cliadd.sin_addr)));
     clients.push_back(cli);
