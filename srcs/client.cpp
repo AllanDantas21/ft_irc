@@ -1,8 +1,11 @@
 #include "../incs/client.hpp"
 #include "../incs/ircserv.hpp"
 
+Client::Client(const int &fd, const std::string &ipadd) : Fd(fd), IPadd(ipadd) {
+    this->authenticated = false;
+}
+
 Client::Client() : Fd(-1) {
-    // Initialize all necessary member variables
 }
 
 Client::~Client(){};

@@ -6,12 +6,13 @@
 
 class Client {
 private:
+	int Fd;
+	bool authenticated;
 	std::string nickname;
 	std::string username;
 	std::string IPadd;
-	bool authenticated;
-	int Fd;
 public:
+	Client(const int &fd, const std::string &ipadd);
 	Client();
 	~Client();
 

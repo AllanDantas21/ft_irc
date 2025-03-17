@@ -6,19 +6,26 @@ Server::Server() : ServerSocketFd(-1) {}
 Server::~Server() {}
 
 void Server::ServerInit(int port, std::string password) {
-    SetAtributes(port, password);
-    ServerConfig();
+    this->SetAtributes(port, password);
+    this->ServerConfig();
 
     std::cout << "Iniciando servidor na porta " << port << "..." << std::endl;
     std::cout << "Esperando conexão...\n";
 
-    WaitConnection();
-    Server::CloseFds();
+    this->WaitConnection();
+    this->CloseFds();
 }
 
 void Server::SetAtributes(int port, std::string password) {
-    SetPort(port);
-    SetPassword(password);
+    this->SetPort(port);
+    this->SetPassword(password);
+}
+
+void setupPollFd(int incofd, struct pollfd &NewPoll)
+{
+    NewPoll.fd = incofd;
+    NewPoll.events = POLLIN;
+    NewPoll.revents = 0;
 }
 
 void Server::ServerConfig() {
@@ -35,9 +42,7 @@ void Server::ServerConfig() {
     SetupSocketOptions();
     BindAndListenSocket(add);
 
-    NewPoll.fd = ServerSocketFd;
-    NewPoll.events = POLLIN;
-    NewPoll.revents = 0;
+    setupPollFd(ServerSocketFd, NewPoll);
     fds.push_back(NewPoll);
 }
 
@@ -71,33 +76,34 @@ void Server::CloseFds() {
     }
 }
 
-void Server::AcceptNewClient() {
-    struct sockaddr_in cliadd;
+static bool validateNewConnection(int socketFd) {
+    if (socketFd == -1)
+        return(std::cout << "accept() falhou" << std::endl, false);
+    if (fcntl(socketFd, F_SETFL, O_NONBLOCK) == -1)
+        return(std::cout << "fcntl() falhou" << std::endl, false);
+    return true;
+}
+
+static void connectClient(int incofd, struct sockaddr_in cliadd, std::vector<Client> &clients, std::vector<struct pollfd> &fds) {
     struct pollfd NewPoll;
-    socklen_t len = sizeof(cliadd);
-
-    memset(&cliadd, 0, sizeof(cliadd));
-    int incofd = accept(ServerSocketFd, (sockaddr *)&(cliadd), &len);
-
-    if (incofd == -1)
-        return (std::cout << "accept() falhou" << std::endl, void());
-
-    if (fcntl(incofd, F_SETFL, O_NONBLOCK) == -1)
-        return (std::cout << "fcntl() falhou" << std::endl, void());
-        
-    NewPoll.fd = incofd;
-    NewPoll.events = POLLIN;
-    NewPoll.revents = 0;
-
-    Client cli;
-    cli.SetFd(incofd);
-    cli.setIpAdd(inet_ntoa((cliadd.sin_addr)));
+    setupPollFd(incofd, NewPoll);
+    Client cli(NewPoll.fd, inet_ntoa((cliadd.sin_addr)));
     clients.push_back(cli);
     fds.push_back(NewPoll);
-
     std::cout << GRE << "Cliente <" << incofd << "> Conectado" << WHI << std::endl;
+}
 
-    SendWelcomeMessage(incofd);
+void Server::AcceptNewClient() {
+    struct sockaddr_in cliadd;
+    socklen_t len = sizeof(cliadd);
+    memset(&cliadd, 0, sizeof(cliadd));
+
+    int incofd = accept(ServerSocketFd, (sockaddr *)&(cliadd), &len);
+    if (!validateNewConnection(incofd))
+        return ;
+
+    connectClient(incofd, cliadd, clients, fds);
+    this->SendWelcomeMessage(incofd);
 }
 
 void Server::ReceiveNewData(int fd) {
@@ -111,7 +117,6 @@ void Server::ReceiveNewData(int fd) {
         ClearClients(fd);
         return (close(fd), void());
     }
-    buff[bytes] = '\0';
     MainParser(buff);
 }
 
