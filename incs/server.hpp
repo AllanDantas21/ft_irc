@@ -5,6 +5,7 @@
 #include "ircserv.hpp"
 
 class Client;
+class Parser;
 
 class Server
 {
@@ -15,6 +16,7 @@ private:
     std::string password;
     std::vector<Client> clients;
     std::vector<struct pollfd> fds;
+    Parser *parser;
 public:
     Server();
     ~Server();

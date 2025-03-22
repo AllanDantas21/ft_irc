@@ -5,9 +5,7 @@ Client::Client(const int &fd, const std::string &ipadd) : Fd(fd), IPadd(ipadd) {
     this->authenticated = false;
 }
 
-Client::Client() : Fd(-1) {
-}
-
+Client::Client() : Fd(-1) {}
 Client::~Client(){};
 
 int Client::GetFd() { return Fd; }
