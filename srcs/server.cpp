@@ -117,7 +117,7 @@ void Server::ReceiveNewData(int fd) {
         ClearClients(fd);
         return (close(fd), void());
     }
-    MainParser(buff);
+    Parser::MainParser(this, buff);
 }
 
 void Server::SignalHandler(int signum) {
