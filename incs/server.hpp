@@ -44,9 +44,13 @@ public:
     void HandlePollEvents();
 
     Client* FindClientByFd(int fd);
-    void HandleAuthentication(Client* client, const char* message);
+    const std::vector<Client>& GetClients() const;
+    bool CheckPassword(const std::string &password);
+    bool IsNicknameInUse(const std::string &nickname);
+    void CheckClientAuthentication(Client* client);
     void SendToClient(int fd, const std::string& message);
     void SendWelcomeMessage(int fd);
+    void SendRegistrationCompleteMessage(Client* client);
 };
 
 #endif
