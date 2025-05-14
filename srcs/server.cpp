@@ -175,6 +175,55 @@ void Server::SendWelcomeMessage(int fd)
     SendToClient(fd, welcomeMsg);
 }
 
+Client* Server::FindClientByFd(int fd) {
+    for (size_t i = 0; i < clients.size(); i++) {
+        if (clients[i].GetFd() == fd) {
+            return &clients[i];
+        }
+    }
+    return NULL;
+}
+
+const std::vector<Client>& Server::GetClients() const {
+    return clients;
+}
+
+bool Server::CheckPassword(const std::string &inputPassword) {
+    return inputPassword == this->password;
+}
+
+bool Server::IsNicknameInUse(const std::string &nickname) {
+    for (size_t i = 0; i < clients.size(); i++) {
+        if (clients[i].getNickname() == nickname) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void Server::CheckClientAuthentication(Client* client) {
+    if (client->hasCompletedRegistration() && !client->isAuthenticated()) {
+        client->SetAuthenticated(true);
+        SendRegistrationCompleteMessage(client);
+    }
+}
+
+void Server::SendRegistrationCompleteMessage(Client* client) {
+    std::string welcome = "001 " + client->getNickname() + " :Welcome to the Internet Relay Network " 
+                         + client->getNickname() + "!" + client->getUsername() + "@" + client->getIpAdd() + "\r\n";
+    
+    std::string yourHost = "002 " + client->getNickname() + " :Your host is ft_irc, running version 1.0\r\n";
+    
+    std::string created = "003 " + client->getNickname() + " :This server was created May 14, 2025\r\n";
+    
+    std::string myInfo = "004 " + client->getNickname() + " ft_irc 1.0 o itkol\r\n";
+    
+    SendToClient(client->GetFd(), welcome + yourHost + created + myInfo);
+    
+    std::cout << GRE << "Cliente <" << client->GetFd() << "> Autenticado como " 
+              << client->getNickname() << "!" << client->getUsername() << WHI << std::endl;
+}
+
 void Server::SetFd(int fd) { this->ServerSocketFd = fd; }
 void Server::SetPort(int port) { this->Port = port; }
 void Server::SetPassword(const std::string &password) { this->password = password; }

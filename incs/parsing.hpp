@@ -8,7 +8,12 @@ class Server;
 class Parser {
 public:
     static void MainParser(Server *server, char *buffer);
+    
 private:
+    static void handlePass(Server *server, const std::string &originalMessage, const std::string &password);
+    static void handleNick(Server *server, const std::string &originalMessage, const std::string &nickname);
+    static void handleUser(Server *server, const std::string &originalMessage, const std::string &username, const std::string &realname);
+    static int findClientFdFromBuffer(Server *server, const std::string &buffer);
 };
 
 #endif
