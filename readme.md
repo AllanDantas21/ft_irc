@@ -1,14 +1,13 @@
 # FT_IRC
 
+## BOARD
+[Team_Board](https://github.com/users/AllanDantas21/projects/3/views/1)
+
 ## Link RFC ref
 [RFC-2812](https://datatracker.ietf.org/doc/html/rfc2812)
 
 ## Links de estudos
 [Estudos](./docs/link_utils.md)
-
-## DEVELOPMENT
-Veja o estilo de código em:
-[codeStyle.md](./docs/codeStyle.md)
 
 ## Introduction
 
