@@ -209,16 +209,10 @@ void Server::CheckClientAuthentication(Client* client) {
 }
 
 void Server::SendRegistrationCompleteMessage(Client* client) {
-    std::string welcome = "001 " + client->getNickname() + " :Welcome to the Internet Relay Network " 
+    std::string welcome = client->getNickname() + " :Welcome to the Internet Relay Network " 
                          + client->getNickname() + "!" + client->getUsername() + "@" + client->getIpAdd() + "\r\n";
     
-    std::string yourHost = "002 " + client->getNickname() + " :Your host is ft_irc, running version 1.0\r\n";
-    
-    std::string created = "003 " + client->getNickname() + " :This server was created May 14, 2025\r\n";
-    
-    std::string myInfo = "004 " + client->getNickname() + " ft_irc 1.0 o itkol\r\n";
-    
-    SendToClient(client->GetFd(), welcome + yourHost + created + myInfo);
+    SendToClient(client->GetFd(), welcome);
     
     std::cout << GRE << "Cliente <" << client->GetFd() << "> Autenticado como " 
               << client->getNickname() << "!" << client->getUsername() << WHI << std::endl;

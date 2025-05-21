@@ -10,5 +10,5 @@ void introduce()
     std::cout << "  |  _|       | |             | |    |  __ /  | |        \n";
     std::cout << " _| |_       _| |_  _______  _| |_  _| |  \\ \\_\\ `.___.'\\ \n";
     std::cout << "|_____|     |_____||_______||_____||____| |___|`.____ .' \n";
-    std::cout << "                                   By: \033[34m@aldantas @dbessa\033[0m\n";
+    std::cout << "                         By: \033[34m@aldantas @dbessa @thfranco\033[0m\n";
 }
