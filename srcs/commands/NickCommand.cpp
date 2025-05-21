@@ -1,8 +1,7 @@
 #include "../../incs/ircserv.hpp"
 
-void Parser::handleNick(Server *server, const std::string &originalMessage, const std::string &nickname) {
-    int clientFd = findClientFdFromBuffer(server, originalMessage);
-    if (clientFd == -1) return;
+void Parser::handleNick(Server *server, const std::string &originalMessage, const std::string &nickname, int clientFd) {
+    (void)originalMessage;
     
     Client* client = server->FindClientByFd(clientFd);
     if (!client) return;

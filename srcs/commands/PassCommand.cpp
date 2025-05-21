@@ -1,9 +1,7 @@
 #include "../../incs/ircserv.hpp"
 
-void Parser::handlePass(Server *server, const std::string &originalMessage, const std::string &password) {
-    int clientFd = findClientFdFromBuffer(server, originalMessage);
-    if (clientFd == -1) return;
-    
+void Parser::handlePass(Server *server, const std::string &originalMessage, const std::string &password, int clientFd) {
+    (void)originalMessage;
     Client* client = server->FindClientByFd(clientFd);
     if (!client) return;
     
