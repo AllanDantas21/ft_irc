@@ -10,6 +10,4 @@
 - TOPIC
 - MODE
 
-5 - Aprimorar o tratamento de mensagens parciais conforme o exemplo de teste
-
-6 - Implementar os códigos de resposta padrão IRC para maior compatibilidade com clientes
+6 - Implementar os códigos de resposta padrão IRC
