@@ -1,10 +1,12 @@
 1 - Implementar a classe Channel para gerenciar canais ( criar um channel)
 
-2 - Implementar o comando JOIN ( para entrar em um channel)
+2 - Implementar o comando JOIN ( para entrar em um channel )
 
-3 - Implementar o comando PRIVMSG ( mensagem privada para outro usuario)
+3 - Tratar o envio e recebimento de mensagens via channel.
 
-4 - implementar os comandos de operador 
+4 - Implementar o comando PRIVMSG ( mensagem privada para outro usuario)
+
+5 - implementar os comandos de operador 
 ∗ KICK - Eject a client from the channel
 ∗ INVITE - Invite a client to a channel
 ∗ TOPIC - Change or view the channel topic
@@ -15,4 +17,4 @@
 · o: Give/take channel operator privilege
 · l: Set/remove the user limit to channel
 
-5 - III.3 Test example (subject)
+6 - III.3 Test example (subject)
