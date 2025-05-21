@@ -1,5 +1,8 @@
 # FT_IRC
 
+## Link RFC ref
+[RFC-2812](https://datatracker.ietf.org/doc/html/rfc2812)
+
 ## Links de estudos
 [Estudos](./docs/link_utils.md)
 

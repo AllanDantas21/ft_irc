@@ -1,0 +1,15 @@
+1 - Implementar a classe Channel para gerenciar canais ( criar um channel)
+
+2 - Implementar o comando JOIN ( para entrar em um channel)
+
+3 - Implementar o comando PRIVMSG ( mensagem privada para outro usuario)
+
+4 - implementar os comandos de operador 
+- KICK
+- INVITE
+- TOPIC
+- MODE
+
+5 - Aprimorar o tratamento de mensagens parciais conforme o exemplo de teste
+
+6 - Implementar os códigos de resposta padrão IRC para maior compatibilidade com clientes
