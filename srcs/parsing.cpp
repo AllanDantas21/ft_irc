@@ -11,12 +11,12 @@ void Parser::MainParser(Server *server, char *buffer, int clientFd) {
     if (command == "PASS") {
         std::string password;
         iss >> password;
-        handlePass(server, iss.tellg() > 0 ? buff.substr(iss.tellg()) : "", password, clientFd);
+        handlePass(server, password, clientFd);
     } 
     else if (command == "NICK") {
         std::string nickname;
         iss >> nickname;
-        handleNick(server, buff, nickname, clientFd);
+        handleNick(server, nickname, clientFd);
     } 
     else if (command == "USER") {
         std::string username, hostname, servername, realname;
@@ -27,7 +27,7 @@ void Parser::MainParser(Server *server, char *buffer, int clientFd) {
             realname = buff.substr(pos + 1);
         }
         
-        handleUser(server, buff, username, realname, clientFd);
+        handleUser(server, username, realname, clientFd);
     } 
     else {
         server->SendToClient(clientFd, "Command not implemented yet: " + buff);
