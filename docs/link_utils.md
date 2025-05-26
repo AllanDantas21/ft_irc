@@ -8,5 +8,7 @@
 
 [C++ Network Programming Part 1: Sockets](https://www.youtube.com/watch?v=gntyAFoZp-E&list=PLHBVNH27RbWqGTL-AYMylWkNck45cxPnG)
 
+[Beej’s Guide to Network Programming](https://beej.us/guide/bgnet/pdf/bgnet_a4_c_1.pdf)
+
 ## Medium
 [building a small irc server](https://medium.com/@afatir.ahmedfatir/small-irc-server-ft-irc-42-network-7cee848de6f9)
