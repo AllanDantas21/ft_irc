@@ -184,6 +184,15 @@ Client* Server::FindClientByFd(int fd) {
     return NULL;
 }
 
+Client* Server::FindClientByNickname(const std::string &nickname) {
+    for (size_t i = 0; i < clients.size(); i++) {
+        if (clients[i].getNickname() == nickname) {
+            return &clients[i];
+        }
+    }
+    return NULL;
+}
+
 const std::vector<Client>& Server::GetClients() const {
     return clients;
 }

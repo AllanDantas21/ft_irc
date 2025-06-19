@@ -28,6 +28,17 @@ void Parser::MainParser(Server *server, char *buffer, int clientFd) {
         }
         
         handleUser(server, username, realname, clientFd);
+    }
+    else if (command == "PRIVMSG") {
+        std::string target, message;
+        iss >> target;
+        
+        size_t pos = buff.find(':', 0);
+        if (pos != std::string::npos) {
+            message = buff.substr(pos + 1);
+        }
+        
+        handlePrivmsg(server, target, message, clientFd);
     } 
     else {
         server->SendToClient(clientFd, "Command not implemented yet: " + buff);
