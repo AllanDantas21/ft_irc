@@ -44,6 +44,7 @@ public:
     void HandlePollEvents();
 
     Client* FindClientByFd(int fd);
+    Client* FindClientByNickname(const std::string &nickname);
     const std::vector<Client>& GetClients() const;
     bool CheckPassword(const std::string &password);
     bool IsNicknameInUse(const std::string &nickname);

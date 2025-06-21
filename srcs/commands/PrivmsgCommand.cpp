@@ -1,0 +1,44 @@
+#include "../../incs/ircserv.hpp"
+bool isValidOperation(Server *server, Client *sender, const std::string &target, const std::string &message, int clientFd);
+
+void Parser::handlePrivmsg(Server *server, const std::string &target, const std::string &message, int clientFd) {
+    Client* sender = server->FindClientByFd(clientFd);
+    if (!sender) return;
+
+    if (!isValidOperation(server, sender, target, message, clientFd)) {
+        return;
+    }
+    
+    Client* recipient = server->FindClientByNickname(target);
+    if (!recipient) {
+        server->SendToClient(clientFd, "401 " + sender->getNickname() + " " + target + " :No such nick\r\n");
+        return;
+    }
+    
+    if (!recipient->hasCompletedRegistration()) {
+        server->SendToClient(clientFd, "401 " + sender->getNickname() + " " + target + " :No such nick\r\n");
+        return;
+    }
+    
+    std::string formattedMessage = ":" + sender->getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
+    server->SendToClient(recipient->GetFd(), formattedMessage);
+}
+
+
+bool isValidOperation(Server *server, Client *sender, const std::string &target, const std::string &message, int clientFd) {
+    if (!sender->hasCompletedRegistration()) {
+        server->SendToClient(clientFd, "451 :You have not registered\r\n");
+        return false;
+    }
+    
+    if (target.empty()) {
+        server->SendToClient(clientFd, "411 :No recipient given (PRIVMSG)\r\n");
+        return false;
+    }
+    
+    if (message.empty()) {
+        server->SendToClient(clientFd, "412 :No text to send\r\n");
+        return false;
+    }
+    return true;
+}
