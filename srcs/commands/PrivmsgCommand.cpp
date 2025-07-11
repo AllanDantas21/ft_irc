@@ -8,20 +8,36 @@ void Parser::handlePrivmsg(Server *server, const std::string &target, const std:
     if (!isValidOperation(server, sender, target, message, clientFd)) {
         return;
     }
-    
-    Client* recipient = server->FindClientByNickname(target);
-    if (!recipient) {
-        server->SendToClient(clientFd, "401 " + sender->getNickname() + " " + target + " :No such nick\r\n");
-        return;
+
+    if (target[0] == '#' || target[0] == '&') {
+        Channel* channel = server->FindChannelByName(target);
+        if (!channel) {
+            server->SendToClient(clientFd, "403 " + sender->getNickname() + " " + target + " :No such channel\r\n");
+            return;
+        }
+        
+        if (!channel->hasClient(sender)) {
+            server->SendToClient(clientFd, "404 " + sender->getNickname() + " " + target + " :Cannot send to channel\r\n");
+            return;
+        }
+        
+        std::string formattedMessage = ":" + sender->getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
+        channel->broadcastToOthers(formattedMessage, sender);
+    } else {
+        Client* recipient = server->FindClientByNickname(target);
+        if (!recipient) {
+            server->SendToClient(clientFd, "401 " + sender->getNickname() + " " + target + " :No such nick\r\n");
+            return;
+        }
+        
+        if (!recipient->hasCompletedRegistration()) {
+            server->SendToClient(clientFd, "401 " + sender->getNickname() + " " + target + " :No such nick\r\n");
+            return;
+        }
+        
+        std::string formattedMessage = ":" + sender->getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
+        server->SendToClient(recipient->GetFd(), formattedMessage);
     }
-    
-    if (!recipient->hasCompletedRegistration()) {
-        server->SendToClient(clientFd, "401 " + sender->getNickname() + " " + target + " :No such nick\r\n");
-        return;
-    }
-    
-    std::string formattedMessage = ":" + sender->getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
-    server->SendToClient(recipient->GetFd(), formattedMessage);
 }
 
 
