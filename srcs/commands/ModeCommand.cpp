@@ -9,54 +9,47 @@ void Parser::handleMode(Server *server, const std::string &target, const std::st
     if (!client) {
         return;
     }
-    
-    // Check if client is fully registered
+ 
     if (!client->hasCompletedRegistration()) {
         server->SendToClient(clientFd, "451 " + client->getNickname() + " :You have not registered\r\n");
         return;
     }
-    
+
     std::cout << "DEBUG MODE: Client " << client->getNickname() << " executing MODE " << target << " " << modes << " " << params << std::endl;
-    
-    // Check if target is a channel
+ 
     if (target.empty() || (target[0] != '#' && target[0] != '&')) {
         server->SendToClient(clientFd, "403 " + client->getNickname() + " " + target + " :No such channel\r\n");
         return;
     }
-    
-    // Find channel
+ 
     Channel* channel = server->FindChannelByName(target);
     if (!channel) {
         server->SendToClient(clientFd, "403 " + client->getNickname() + " " + target + " :No such channel\r\n");
         return;
     }
-    
+
     std::cout << "DEBUG MODE: Channel found: " << target << std::endl;
-    
-    // Check if client is in channel
+ 
     if (!channel->hasClient(client)) {
         server->SendToClient(clientFd, "442 " + client->getNickname() + " " + target + " :You're not on that channel\r\n");
         return;
     }
-    
+ 
     std::cout << "DEBUG MODE: Client is in channel" << std::endl;
-    
-    // If no modes specified, return current modes
+ 
     if (modes.empty()) {
         std::string currentModes = channel->getModes();
         server->SendToClient(clientFd, "324 " + client->getNickname() + " " + target + " " + currentModes + "\r\n");
         return;
     }
-    
-    // Check if client is operator for mode changes
+ 
     if (!channel->isOperator(client)) {
         server->SendToClient(clientFd, "482 " + client->getNickname() + " " + target + " :You're not channel operator\r\n");
         return;
     }
-    
+ 
     std::cout << "DEBUG MODE: Client is operator, proceeding with mode changes" << std::endl;
-    
-    // Parse parameters
+ 
     std::istringstream paramStream(params);
     std::vector<std::string> paramList;
     std::string param;
@@ -66,7 +59,6 @@ void Parser::handleMode(Server *server, const std::string &target, const std::st
     
     std::cout << "DEBUG MODE: Parsed " << paramList.size() << " parameters" << std::endl;
     
-    // Process modes
     bool adding = true;
     std::string modeChanges;
     std::string modeParams;
@@ -91,14 +83,12 @@ void Parser::handleMode(Server *server, const std::string &target, const std::st
                 modeChanges += '-';
             }
         } else {
-            // Process mode character
             std::cout << "DEBUG MODE: Processing mode character '" << c << "', adding=" << adding << std::endl;
             
             if (c == 'k') {
                 std::cout << "DEBUG MODE: Processing key mode (k), adding=" << adding << std::endl;
                 
                 if (adding) {
-                    // Setting key - need parameter
                     if (paramIndex < paramList.size()) {
                         std::string key = paramList[paramIndex++];
                         std::cout << "DEBUG MODE: Setting key to '" << key << "'" << std::endl;
@@ -118,14 +108,12 @@ void Parser::handleMode(Server *server, const std::string &target, const std::st
                         return;
                     }
                 } else {
-                    // Removing key
                     std::cout << "DEBUG MODE: Removing key" << std::endl;
                     channel->setKey("");
                     modeChanges += 'k';
                 }
             } else if (c == 'l') {
                 if (adding) {
-                    // Setting limit - need parameter
                     if (paramIndex < paramList.size()) {
                         int limit = std::atoi(paramList[paramIndex++].c_str());
                         if (limit > 0) {
@@ -139,12 +127,10 @@ void Parser::handleMode(Server *server, const std::string &target, const std::st
                         return;
                     }
                 } else {
-                    // Removing limit
                     channel->setUserLimit(-1);
                     modeChanges += 'l';
                 }
             } else if (c == 'i' || c == 't' || c == 'n' || c == 'm' || c == 's' || c == 'p') {
-                // Simple modes without parameters
                 channel->setMode(c, adding);
                 modeChanges += c;
                 std::cout << "DEBUG MODE: Set mode '" << c << "' to " << (adding ? "true" : "false") << std::endl;
@@ -157,8 +143,7 @@ void Parser::handleMode(Server *server, const std::string &target, const std::st
     
     std::cout << "DEBUG MODE: Final mode changes string: '" << modeChanges << "'" << std::endl;
     
-    // Send mode change confirmation if any changes were made
-    if (modeChanges.length() > 1) {  // More than just '+' or '-'
+    if (modeChanges.length() > 1) {
         std::string modeMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getIpAdd() + " MODE " + target + " " + modeChanges;
         if (!modeParams.empty()) {
             modeMsg += " " + modeParams;
@@ -167,13 +152,11 @@ void Parser::handleMode(Server *server, const std::string &target, const std::st
         
         std::cout << "DEBUG MODE: Broadcasting mode message: " << modeMsg.substr(0, modeMsg.length() - 2) << std::endl;
         
-        // Send to all clients in channel
         channel->broadcastMessage(modeMsg);
         
         std::cout << "DEBUG MODE: Mode message broadcasted" << std::endl;
     }
     
-    // Debug: Show final channel state
     std::cout << "DEBUG MODE: Final channel modes: " << channel->getModes() << std::endl;
     std::cout << "DEBUG MODE: Channel has key: ";
     if (channel->hasKey()) {
