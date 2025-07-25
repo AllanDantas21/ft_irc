@@ -154,7 +154,7 @@ void Server::ClearClients(int fd) {
         for (size_t i = 0; i < channels.size(); i++) {
             if (channels[i]->hasClient(client)) {
                 std::string partMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getIpAdd() + " PART " + channels[i]->getName() + " :Client disconnected\r\n";
-                channels[i]->broadcastToOthers(partMsg, client);
+                channels[i]->broadcastMessage(partMsg, client);
                 
                 channels[i]->removeClient(client);
             }

@@ -74,7 +74,7 @@ void Parser::handleJoin(Server *server, const std::string &channelName, const st
     server->SendToClient(clientFd, joinMsg);
     
     // Broadcast JOIN to other clients in channel
-    channel->broadcastToOthers(joinMsg, client);
+    channel->broadcastMessage(joinMsg, client);
     
     // Send topic if it exists
     if (!channel->getTopic().empty()) {

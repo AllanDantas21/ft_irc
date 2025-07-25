@@ -18,7 +18,7 @@ private:
     static void handleTopic(Server *server, const std::string &channelName, const std::string &topic, int clientFd);
     static void handleKick(Server *server, const std::string &channelName, const std::string &targetNick, const std::string &reason, int clientFd);
     static void handleInvite(Server *server, const std::string &targetNick, const std::string &channelName, int clientFd);
-    static void handleMode(Server *server, const std::string &target, const std::string &modes, const std::string &params, int clientFd);  // Updated signature
+    static void handleMode(Server *server, const std::string &target, const std::string &modes, const std::string &params, int clientFd);
 };
 
 #endif

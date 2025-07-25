@@ -34,7 +34,6 @@ public:
     bool removeOperator(Client* client);
 
     void broadcastMessage(const std::string& message, Client* sender = NULL);
-    void broadcastToOthers(const std::string& message, Client* sender);
     
 
     void setTopic(const std::string& newTopic, Client* setter = NULL);

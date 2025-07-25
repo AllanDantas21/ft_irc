@@ -6,7 +6,7 @@
 #include "channel.hpp"
 
 class Client;
-class Channel;  // Forward declaration
+class Channel;
 
 class Server
 {
@@ -17,7 +17,7 @@ private:
     std::string password;
     std::vector<Client> clients;
     std::vector<struct pollfd> fds;
-    std::vector<Channel*> channels;  // Add channels management
+    std::vector<Channel*> channels;
     
 public:
     Server();
@@ -55,7 +55,6 @@ public:
     void SendWelcomeMessage(int fd);
     void SendRegistrationCompleteMessage(Client* client);
 
-    // Add channel management methods
     Channel* FindChannelByName(const std::string& name);
     Channel* CreateChannel(const std::string& name);
     bool RemoveChannel(const std::string& name);

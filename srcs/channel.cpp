@@ -131,10 +131,6 @@ void Channel::broadcastMessage(const std::string& message, Client* sender) {
     }
 }
 
-void Channel::broadcastToOthers(const std::string& message, Client* sender) {
-    broadcastMessage(message, sender);
-}
-
 void Channel::setTopic(const std::string& newTopic, Client* setter) {
     if (hasMode('t') && setter != NULL && !isOperator(setter)) {
         return;
