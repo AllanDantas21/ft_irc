@@ -3,7 +3,12 @@
 bool Server::HasSignal = false;
 
 Server::Server() : ServerSocketFd(-1) {}
-Server::~Server() {}
+Server::~Server() {
+    for (size_t i = 0; i < channels.size(); i++) {
+        delete channels[i];
+    }
+    channels.clear();
+}
 
 void Server::ServerInit(int port, std::string password) {
     this->SetAtributes(port, password);
@@ -142,6 +147,29 @@ void Server::BindAndListenSocket(struct sockaddr_in &add) {
 }
 
 void Server::ClearClients(int fd) {
+    Client* client = FindClientByFd(fd);
+    if (client) {
+        std::cout << "Cliente <" << fd << "> Desconectado" << std::endl;
+        
+        for (size_t i = 0; i < channels.size(); i++) {
+            if (channels[i]->hasClient(client)) {
+                std::string partMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getIpAdd() + " PART " + channels[i]->getName() + " :Client disconnected\r\n";
+                channels[i]->broadcastMessage(partMsg, client);
+                
+                channels[i]->removeClient(client);
+            }
+        }
+
+        RemoveEmptyChannels();
+    }
+
+    for (size_t i = 0; i < clients.size(); i++) {
+        if (clients[i].GetFd() == fd) {
+            clients.erase(clients.begin() + i);
+            break;
+        }
+    }
+    
     CloseClientFd(fd);
     CloseFd(fd);
 }
@@ -184,7 +212,7 @@ Client* Server::FindClientByFd(int fd) {
     return NULL;
 }
 
-Client* Server::FindClientByNickname(const std::string &nickname) {
+Client* Server::FindClientByNickname(const std::string& nickname) {
     for (size_t i = 0; i < clients.size(); i++) {
         if (clients[i].getNickname() == nickname) {
             return &clients[i];
@@ -225,6 +253,57 @@ void Server::SendRegistrationCompleteMessage(Client* client) {
     
     std::cout << GRE << "Cliente <" << client->GetFd() << "> Autenticado como " 
               << client->getNickname() << "!" << client->getUsername() << WHI << std::endl;
+}
+
+Channel* Server::FindChannelByName(const std::string& name) {
+    for (size_t i = 0; i < channels.size(); i++) {
+        if (channels[i]->getName() == name) {
+            return channels[i];
+        }
+    }
+    return NULL;
+}
+
+Channel* Server::CreateChannel(const std::string& name) {
+    // Check if channel already exists
+    if (FindChannelByName(name)) {
+        return NULL;
+    }
+    
+    // Validate channel name
+    if (!Channel::isValidName(name)) {
+        return NULL;
+    }
+    
+    Channel* newChannel = new Channel(name);
+    channels.push_back(newChannel);
+    return newChannel;
+}
+
+bool Server::RemoveChannel(const std::string& name) {
+    for (size_t i = 0; i < channels.size(); i++) {
+        if (channels[i]->getName() == name) {
+            delete channels[i];
+            channels.erase(channels.begin() + i);
+            return true;
+        }
+    }
+    return false;
+}
+
+void Server::RemoveEmptyChannels() {
+    for (size_t i = 0; i < channels.size(); ) {
+        if (channels[i]->getClientCount() == 0) {
+            delete channels[i];
+            channels.erase(channels.begin() + i);
+        } else {
+            i++;
+        }
+    }
+}
+
+std::vector<Channel*> Server::GetChannels() const {
+    return channels;
 }
 
 void Server::SetFd(int fd) { this->ServerSocketFd = fd; }

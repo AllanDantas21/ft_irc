@@ -3,8 +3,10 @@
 #pragma once
 
 #include "ircserv.hpp"
+#include "channel.hpp"
 
 class Client;
+class Channel;
 
 class Server
 {
@@ -15,9 +17,9 @@ private:
     std::string password;
     std::vector<Client> clients;
     std::vector<struct pollfd> fds;
+    std::vector<Channel*> channels;
+    
 public:
-    Parser parser;
-
     Server();
     ~Server();
 
@@ -52,6 +54,12 @@ public:
     void SendToClient(int fd, const std::string& message);
     void SendWelcomeMessage(int fd);
     void SendRegistrationCompleteMessage(Client* client);
+
+    Channel* FindChannelByName(const std::string& name);
+    Channel* CreateChannel(const std::string& name);
+    bool RemoveChannel(const std::string& name);
+    void RemoveEmptyChannels();
+    std::vector<Channel*> GetChannels() const;
 };
 
 #endif

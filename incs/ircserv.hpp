@@ -19,6 +19,7 @@
 #include "parsing.hpp"
 #include "client.hpp"
 #include "server.hpp"
+#include "channel.hpp"
 #include "utils/prompt.hpp"
 
 #define RED "\e[1;31m" 

@@ -1,0 +1,90 @@
+#include "../../incs/parsing.hpp"
+#include "../../incs/server.hpp"
+#include "../../incs/client.hpp"
+#include "../../incs/channel.hpp"
+
+void Parser::handleJoin(Server *server, const std::string &channelName, const std::string &key, int clientFd) {
+    Client* client = server->FindClientByFd(clientFd);
+    if (!client) {
+        return;
+    }
+    
+    // Debug output
+    std::cout << "DEBUG JOIN HANDLER: channel='" << channelName << "', key='" << key << "'" << std::endl;
+    
+    // Check if client is fully registered
+    if (!client->hasCompletedRegistration()) {
+        server->SendToClient(clientFd, "451 " + client->getNickname() + " :You have not registered\r\n");
+        return;
+    }
+    
+    // Validate channel name
+    if (channelName.empty() || !Channel::isValidName(channelName)) {
+        server->SendToClient(clientFd, "403 " + client->getNickname() + " " + channelName + " :No such channel\r\n");
+        return;
+    }
+    
+    // Find or create channel
+    Channel* channel = server->FindChannelByName(channelName);
+    if (!channel) {
+        channel = server->CreateChannel(channelName);
+        if (!channel) {
+            server->SendToClient(clientFd, "403 " + client->getNickname() + " " + channelName + " :No such channel\r\n");
+            return;
+        }
+    }
+    
+    // Check if client is already in channel
+    if (channel->hasClient(client)) {
+        return; // Already in channel, silently ignore
+    }
+    
+    // Debug channel key checking
+    std::cout << "DEBUG: Channel has key: " << (channel->hasKey() ? "YES" : "NO") << std::endl;
+    if (channel->hasKey()) {
+        std::cout << "DEBUG: Provided key: '" << key << "'" << std::endl;
+        std::cout << "DEBUG: Key check result: " << (channel->checkKey(key) ? "PASS" : "FAIL") << std::endl;
+    }
+    
+    // Check channel key/password
+    if (channel->hasKey() && !channel->checkKey(key)) {
+        server->SendToClient(clientFd, "475 " + client->getNickname() + " " + channelName + " :Cannot join channel (+k)\r\n");
+        return;
+    }
+    
+    // Try to add client to channel
+    if (!channel->addClient(client)) {
+        // Check specific reasons for failure
+        if (channel->isBanned(client)) {
+            server->SendToClient(clientFd, "474 " + client->getNickname() + " " + channelName + " :Cannot join channel (+b)\r\n");
+        } else if (channel->isFull()) {
+            server->SendToClient(clientFd, "471 " + client->getNickname() + " " + channelName + " :Cannot join channel (+l)\r\n");
+        } else if (channel->isInviteOnly()) {
+            server->SendToClient(clientFd, "473 " + client->getNickname() + " " + channelName + " :Cannot join channel (+i)\r\n");
+        } else {
+            server->SendToClient(clientFd, "473 " + client->getNickname() + " " + channelName + " :Cannot join channel\r\n");
+        }
+        return;
+    }
+    
+    // Create JOIN message
+    std::string joinMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getIpAdd() + " JOIN " + channelName + "\r\n";
+    
+    // Send JOIN confirmation to client
+    server->SendToClient(clientFd, joinMsg);
+    
+    // Broadcast JOIN to other clients in channel
+    channel->broadcastMessage(joinMsg, client);
+    
+    // Send topic if it exists
+    if (!channel->getTopic().empty()) {
+        server->SendToClient(clientFd, "332 " + client->getNickname() + " " + channelName + " :" + channel->getTopic() + "\r\n");
+    } else {
+        server->SendToClient(clientFd, "331 " + client->getNickname() + " " + channelName + " :No topic is set\r\n");
+    }
+    
+    // Send names list
+    std::string namesList = channel->getClientsList();
+    server->SendToClient(clientFd, "353 " + client->getNickname() + " = " + channelName + " :" + namesList + "\r\n");
+    server->SendToClient(clientFd, "366 " + client->getNickname() + " " + channelName + " :End of NAMES list\r\n");
+}
