@@ -26,7 +26,7 @@ void Parser::handlePart(Server *server, const std::string &channelName, int clie
     }
 
     std::string partMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getIpAdd() + " PART " + channelName + "\r\n";
-    channel->broadcastMessage(partMsg);
+    channel->broadcastMessage(partMsg, client, server);
 
     channel->removeClient(client);
 

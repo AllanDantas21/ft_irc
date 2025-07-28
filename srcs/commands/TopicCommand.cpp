@@ -43,5 +43,5 @@ void Parser::handleTopic(Server *server, const std::string &channelName, const s
     channel->setTopic(topic, client);
  
     std::string topicMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getIpAdd() + " TOPIC " + channelName + " :" + topic + "\r\n";
-    channel->broadcastMessage(topicMsg);
+    channel->broadcastMessage(topicMsg, client, server);
 }

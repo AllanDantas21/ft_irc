@@ -22,7 +22,7 @@ void Parser::handlePrivmsg(Server *server, const std::string &target, const std:
         }
         
         std::string formattedMessage = ":" + sender->getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
-        channel->broadcastMessage(formattedMessage, sender);
+        channel->broadcastMessage(formattedMessage, sender, server);
     } else {
         Client* recipient = server->FindClientByNickname(target);
         if (!recipient) {

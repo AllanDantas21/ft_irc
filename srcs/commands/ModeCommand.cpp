@@ -152,7 +152,7 @@ void Parser::handleMode(Server *server, const std::string &target, const std::st
         
         std::cout << "DEBUG MODE: Broadcasting mode message: " << modeMsg.substr(0, modeMsg.length() - 2) << std::endl;
         
-        channel->broadcastMessage(modeMsg);
+        channel->broadcastMessage(modeMsg, client, server);
         
         std::cout << "DEBUG MODE: Mode message broadcasted" << std::endl;
     }
