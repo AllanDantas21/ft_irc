@@ -17,6 +17,25 @@ void Parser::handleJoin(Server *server, const std::string &channelName, const st
         server->SendToClient(clientFd, "451 " + client->getNickname() + " :You have not registered\r\n");
         return;
     }
+
+    if (channelName == "0") {
+        std::cout << "DEBUG: JOIN 0 - parting from all channels" << std::endl;
+        std::vector<Channel*> allChannels = server->GetChannels();
+
+        for (size_t i = 0; i < allChannels.size(); i++) {
+            if (allChannels[i]->hasClient(client)) {
+                std::string partMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getIpAdd() + " PART " + allChannels[i]->getName() + " :Left all channels\r\n";
+
+                server->SendToClient(clientFd, partMsg);
+                allChannels[i]->broadcastMessage(partMsg, client, server);
+                allChannels[i]->removeClient(client);
+            }
+        }
+        
+        // Remove empty channels
+        server->RemoveEmptyChannels();
+        return;
+    }
     
     // Validate channel name
     if (channelName.empty() || !Channel::isValidName(channelName)) {
