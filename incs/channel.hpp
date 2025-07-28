@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <cerrno>
 
 class Client;
 class Server;
@@ -35,16 +36,16 @@ public:
     bool removeOperator(Client* client);
 
     void broadcastMessage(const std::string& message, Client* sender, Server* server);
-    
+
 
     void setTopic(const std::string& newTopic, Client* setter = NULL);
     std::string getTopic() const;
-    
+
 
     void setMode(char mode, bool value);
     bool hasMode(char mode) const;
     std::string getModes() const;
-    
+
 
     bool isInviteOnly() const;
     bool hasKey() const;
