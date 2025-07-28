@@ -15,8 +15,8 @@ Channel::Channel(std::string name) : channelName(name), userLimit(-1) {
 }
 
 Channel::~Channel() {
-    clients.clear();
-    operators.clear();
+    clientFds.clear();
+    operatorFds.clear();
 }
 
 bool Channel::isValidName(const std::string& attemptName) {
@@ -43,15 +43,21 @@ std::string Channel::getName() const {
 }
 
 bool Channel::addClient(Client* client) {
+    std::cout << "DEBUG: Channel::addClient called for " << (client ? client->getNickname() : "NULL") << " to channel " << channelName << std::endl;
+    std::cout << "DEBUG: Current client count: " << clientFds.size() << std::endl;
+    
     if (!client || hasClient(client)) {
+        std::cout << "DEBUG: addClient failed - client is NULL or already in channel" << std::endl;
         return false;
     }
 
     if (isBanned(client)) {
+        std::cout << "DEBUG: addClient failed - client is banned" << std::endl;
         return false;
     }
 
     if (isFull()) {
+        std::cout << "DEBUG: addClient failed - channel is full" << std::endl;
         return false;
     }
 
@@ -70,12 +76,18 @@ bool Channel::addClient(Client* client) {
         removeInvite(clientMask);
     }
 
-    clients.push_back(client);
+    clientFds.push_back(client->GetFd());
+    
+    std::cout << "DEBUG addClient: After push_back, client FD = " << client->GetFd() << std::endl;
+    std::cout << "DEBUG addClient: Verifying stored FD..." << std::endl;
+    std::cout << "DEBUG addClient: clientFds[" << (clientFds.size()-1) << "] = " << clientFds[clientFds.size()-1] << std::endl;
 
-    if (clients.size() == 1) {
-        operators.push_back(client);
+    if (clientFds.size() == 1) {
+        operatorFds.push_back(client->GetFd());
+        std::cout << "DEBUG: Client " << client->getNickname() << " is now operator (first in channel)" << std::endl;
     }
     
+    std::cout << "DEBUG: addClient successful - channel now has " << clientFds.size() << " clients" << std::endl;
     return true;
 }
 
@@ -84,25 +96,43 @@ bool Channel::removeClient(Client* client) {
         return false;
     }
 
-    std::vector<Client*>::iterator it = std::find(clients.begin(), clients.end(), client);
-    if (it != clients.end()) {
-        clients.erase(it);
+    for (size_t i = 0; i < clientFds.size(); i++) {
+        if (clientFds[i] == client->GetFd()) {
+            clientFds.erase(clientFds.begin() + i);
+            break;
+        }
     }
 
-    std::vector<Client*>::iterator opIt = std::find(operators.begin(), operators.end(), client);
-    if (opIt != operators.end()) {
-        operators.erase(opIt);
+    for (size_t i = 0; i < operatorFds.size(); i++) {
+        if (operatorFds[i] == client->GetFd()) {
+            operatorFds.erase(operatorFds.begin() + i);
+            break;
+        }
     }
     
     return true;
 }
 
 bool Channel::hasClient(Client* client) const {
-    return std::find(clients.begin(), clients.end(), client) != clients.end();
+    if (!client) return false;
+    
+    for (size_t i = 0; i < clientFds.size(); i++) {
+        if (clientFds[i] == client->GetFd()) {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool Channel::isOperator(Client* client) const {
-    return std::find(operators.begin(), operators.end(), client) != operators.end();
+    if (!client) return false;
+    
+    for (size_t i = 0; i < operatorFds.size(); i++) {
+        if (operatorFds[i] == client->GetFd()) {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool Channel::addOperator(Client* client) {
@@ -110,23 +140,41 @@ bool Channel::addOperator(Client* client) {
         return false;
     }
     
-    operators.push_back(client);
+    operatorFds.push_back(client->GetFd());
     return true;
 }
 
 bool Channel::removeOperator(Client* client) {
-    std::vector<Client*>::iterator it = std::find(operators.begin(), operators.end(), client);
-    if (it != operators.end()) {
-        operators.erase(it);
-        return true;
+    for (size_t i = 0; i < operatorFds.size(); i++) {
+        if (operatorFds[i] == client->GetFd()) {
+            operatorFds.erase(operatorFds.begin() + i);
+            return true;
+        }
     }
     return false;
 }
 
-void Channel::broadcastMessage(const std::string& message, Client* sender) {
-    for (size_t i = 0; i < clients.size(); i++) {
-        if (clients[i] != sender) {
-            send(clients[i]->GetFd(), message.c_str(), message.length(), 0);
+void Channel::broadcastMessage(const std::string& message, Client* sender, Server* server) {
+    (void)server; // Mark as used for compilation
+    std::cout << "DEBUG broadcastMessage: Broadcasting to " << clientFds.size() << " clients in channel " << channelName << std::endl;
+    std::cout << "DEBUG broadcastMessage: Sender FD = " << (sender ? sender->GetFd() : -1) << std::endl;
+    
+    for (size_t i = 0; i < clientFds.size(); i++) {
+        int clientFd = clientFds[i];
+        std::cout << "DEBUG broadcastMessage: Client FD = " << clientFd << std::endl;
+        
+        // Skip sending to sender
+        if (sender && clientFd == sender->GetFd()) {
+            std::cout << "DEBUG broadcastMessage: Skipping sender (FD " << clientFd << ")" << std::endl;
+            continue;
+        }
+        
+        std::cout << "DEBUG broadcastMessage: Sending to client FD " << clientFd << std::endl;
+        ssize_t result = send(clientFd, message.c_str(), message.length(), 0);
+        if (result == -1) {
+            std::cout << "DEBUG: Error sending message to client " << clientFd << " - " << strerror(errno) << std::endl;
+        } else {
+            std::cout << "DEBUG broadcastMessage: Successfully sent " << result << " bytes to FD " << clientFd << std::endl;
         }
     }
 }
@@ -139,7 +187,8 @@ void Channel::setTopic(const std::string& newTopic, Client* setter) {
     topic = newTopic;
     if (setter != NULL) {
         std::string topicMsg = ":" + setter->getNickname() + " TOPIC " + channelName + " :" + newTopic + "\r\n";
-        broadcastMessage(topicMsg, setter);
+        // TODO: Fix this call - needs server parameter
+        // broadcastMessage(topicMsg, setter);
     }
 }
 
@@ -253,38 +302,52 @@ int Channel::getUserLimit() const {
 }
 
 bool Channel::isFull() const {
-    return userLimit > 0 && static_cast<int>(clients.size()) >= userLimit;
+    return userLimit > 0 && static_cast<int>(clientFds.size()) >= userLimit;
 }
 
 int Channel::getClientCount() const {
-    return clients.size();
+    return clientFds.size();
 }
 
 std::vector<Client*> Channel::getClients() const {
-    return clients;
+    // TODO: Implement this properly - needs server reference
+    std::vector<Client*> empty;
+    return empty;
 }
 
 std::vector<Client*> Channel::getOperators() const {
-    return operators;
+    // TODO: Implement this properly - needs server reference  
+    std::vector<Client*> empty;
+    return empty;
 }
 
-std::string Channel::getClientsList() const {
-    if (clients.empty()) {
+std::string Channel::getClientsList(Server* server) const {
+    std::cout << "DEBUG getClientsList: Channel " << channelName << " has " << clientFds.size() << " clients" << std::endl;
+    
+    if (clientFds.empty()) {
+        std::cout << "DEBUG getClientsList: No clients in channel" << std::endl;
         return "";
     }
 
     std::stringstream ss;
-    for (size_t i = 0; i < clients.size(); i++) {
-        if (clients[i] && !clients[i]->getNickname().empty()) {
-            if (isOperator(clients[i])) {
+    for (size_t i = 0; i < clientFds.size(); i++) {
+        int clientFd = clientFds[i];
+        std::cout << "DEBUG getClientsList: Client FD = " << clientFd << std::endl;
+        
+        Client* client = server->FindClientByFd(clientFd);
+        if (client && !client->getNickname().empty()) {
+            if (isOperator(client)) {
                 ss << "@";
             }
-            ss << clients[i]->getNickname();
-            if (i < clients.size() - 1) {
+            ss << client->getNickname();
+            if (i < clientFds.size() - 1) {
                 ss << " ";
             }
         }
     }
-    return ss.str();
+    
+    std::string result = ss.str();
+    std::cout << "DEBUG getClientsList: Result = '" << result << "'" << std::endl;
+    return result;
 }
 

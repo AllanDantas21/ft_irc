@@ -6,11 +6,12 @@
 #include <map>
 
 class Client;
+class Server;
 
 class Channel {
 private:
-    std::vector<Client*> clients;
-    std::vector<Client*> operators;
+    std::vector<int> clientFds;
+    std::vector<int> operatorFds;
     std::string channelName;
     std::string topic;
     std::string key;
@@ -33,7 +34,7 @@ public:
     bool addOperator(Client* client);
     bool removeOperator(Client* client);
 
-    void broadcastMessage(const std::string& message, Client* sender = NULL);
+    void broadcastMessage(const std::string& message, Client* sender, Server* server);
     
 
     void setTopic(const std::string& newTopic, Client* setter = NULL);
@@ -63,5 +64,5 @@ public:
     int getClientCount() const;
     std::vector<Client*> getClients() const;
     std::vector<Client*> getOperators() const;
-    std::string getClientsList() const;
+    std::string getClientsList(Server* server) const;
 };
