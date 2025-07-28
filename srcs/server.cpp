@@ -118,10 +118,15 @@ void Server::ReceiveNewData(int fd) {
     ssize_t bytes = recv(fd, buff, sizeof(buff) - 1, 0);
 
     if (bytes <= 0) {
-        std::cout << RED << "Cliente <" << fd << "> Desconectado" << WHI << std::endl;
+        if (bytes == 0) {
+            std::cout << RED << "Cliente <" << fd << "> Desconectado (conexão fechada pelo cliente)" << WHI << std::endl;
+        } else {
+            std::cout << RED << "Cliente <" << fd << "> Desconectado (erro na recepção: " << strerror(errno) << ")" << WHI << std::endl;
+        }
         ClearClients(fd);
         return (close(fd), void());
     }
+    std::cout << "DEBUG: Received from client " << fd << ": " << buff << std::endl;
     Parser::MainParser(this, buff, fd);
 }
 
@@ -154,7 +159,7 @@ void Server::ClearClients(int fd) {
         for (size_t i = 0; i < channels.size(); i++) {
             if (channels[i]->hasClient(client)) {
                 std::string partMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getIpAdd() + " PART " + channels[i]->getName() + " :Client disconnected\r\n";
-                channels[i]->broadcastMessage(partMsg, client);
+                channels[i]->broadcastMessage(partMsg, client, this);
                 
                 channels[i]->removeClient(client);
             }
@@ -292,14 +297,18 @@ bool Server::RemoveChannel(const std::string& name) {
 }
 
 void Server::RemoveEmptyChannels() {
+    std::cout << "DEBUG: RemoveEmptyChannels called - checking " << channels.size() << " channels" << std::endl;
     for (size_t i = 0; i < channels.size(); ) {
+        std::cout << "DEBUG: Channel " << channels[i]->getName() << " has " << channels[i]->getClientCount() << " clients" << std::endl;
         if (channels[i]->getClientCount() == 0) {
+            std::cout << "DEBUG: Removing empty channel: " << channels[i]->getName() << std::endl;
             delete channels[i];
             channels.erase(channels.begin() + i);
         } else {
             i++;
         }
     }
+    std::cout << "DEBUG: RemoveEmptyChannels finished - " << channels.size() << " channels remain" << std::endl;
 }
 
 std::vector<Channel*> Server::GetChannels() const {
