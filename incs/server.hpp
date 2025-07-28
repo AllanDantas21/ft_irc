@@ -4,6 +4,7 @@
 
 #include "ircserv.hpp"
 #include "channel.hpp"
+#include <cerrno>
 
 class Client;
 class Channel;
@@ -18,7 +19,7 @@ private:
     std::vector<Client> clients;
     std::vector<struct pollfd> fds;
     std::vector<Channel*> channels;
-    
+
 public:
     Server();
     ~Server();
@@ -30,12 +31,12 @@ public:
     void ReceiveNewData(int fd);
 
     static void SignalHandler(int signum);
- 
+
     void CloseFds();
     void CloseFd(int fd);
     void CloseClientFd(int fd);
     void ClearClients(int fd);
-    
+
     void SetFd(int fd);
     void SetPort(int port);
     void SetPassword(const std::string &password);

@@ -55,7 +55,7 @@ void Parser::handleKick(Server *server, const std::string &channelName, const st
     kickMsg += "\r\n";
     
     // Send KICK message to all clients in channel
-    channel->broadcastMessage(kickMsg);
+    channel->broadcastMessage(kickMsg, client, server);
     
     // Remove target from channel
     channel->removeClient(target);

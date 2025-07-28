@@ -27,11 +27,16 @@ void Parser::handleJoin(Server *server, const std::string &channelName, const st
     // Find or create channel
     Channel* channel = server->FindChannelByName(channelName);
     if (!channel) {
+        std::cout << "DEBUG: Creating new channel: " << channelName << std::endl;
         channel = server->CreateChannel(channelName);
         if (!channel) {
             server->SendToClient(clientFd, "403 " + client->getNickname() + " " + channelName + " :No such channel\r\n");
             return;
         }
+        std::cout << "DEBUG: Channel created successfully" << std::endl;
+    } else {
+        std::cout << "DEBUG: Found existing channel: " << channelName << " with " << channel->getClientCount() << " clients" << std::endl;
+        std::cout << "DEBUG: Current clients in channel: " << channel->getClientsList(server) << std::endl;
     }
     
     // Check if client is already in channel
@@ -74,7 +79,7 @@ void Parser::handleJoin(Server *server, const std::string &channelName, const st
     server->SendToClient(clientFd, joinMsg);
     
     // Broadcast JOIN to other clients in channel
-    channel->broadcastMessage(joinMsg, client);
+    channel->broadcastMessage(joinMsg, client, server);
     
     // Send topic if it exists
     if (!channel->getTopic().empty()) {
@@ -84,7 +89,7 @@ void Parser::handleJoin(Server *server, const std::string &channelName, const st
     }
     
     // Send names list
-    std::string namesList = channel->getClientsList();
+    std::string namesList = channel->getClientsList(server);
     server->SendToClient(clientFd, "353 " + client->getNickname() + " = " + channelName + " :" + namesList + "\r\n");
     server->SendToClient(clientFd, "366 " + client->getNickname() + " " + channelName + " :End of NAMES list\r\n");
 }
