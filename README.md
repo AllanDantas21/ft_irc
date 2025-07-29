@@ -48,6 +48,76 @@ ft_irc is a project for the 42 curriculum that involves creating an IRC (Interne
     /nc <localhost> <port>
     ```
 
+2. Commands:
+
+    * KICK: Eject a client from the channel
+    ```sh
+        KICK #channel user
+    ```
+
+    * INVITE: Invite a client to a channel
+    ```sh
+        INVITE user #channel
+    ```
+
+    * TOPIC: Change or view the channel topic
+    ```sh
+        #This command shoud print the TOPIC that has been set to channel
+        TOPIC #channel
+
+        #This command should set a new TOPIC to channel
+        TOPIC #channel : NEW TOPIC
+    ```
+
+    * MODE: Change the channel’s mode, this enable the channel's creator to set some config to channel like an admin.
+
+        - i: Set/remove Invite-only channel
+        ```sh
+            #This MODE should restrict the users to only access the channel if they have a INVITE
+            MODE #channel +i
+
+            #This MODE deactivate the restriction to access the channel with an INVITE
+            MODE #channel -i
+        ```
+
+        - t: Set/remove the restrictions of the TOPIC command to channel operators
+        ```sh
+            # This MODE restricts changing the channel TOPIC to only channel operators
+            MODE #channel +t
+
+            # This MODE removes the restriction, allowing any user to change the channel TOPIC
+            MODE #channel -t
+        ```
+
+        - k: Set/remove the channel key (password)
+        ```sh
+            # This MODE restrict the users to only access the channel if they have known a password
+            MODE #channel +k secretkey
+
+            # This MODE removes the restriction, allowing any user to change access the channel
+            MODE #channel -k
+        ```
+
+        - o: Give/take channel operator privilege
+        ```sh
+            # This MODE gives privileges to user to be operators
+            MODE #channel +o user
+
+            # This MODE removes privileges from users to be operators
+            MODE #channel -o user
+        ```
+
+        - l: Set/remove the user limit to channel
+        ```sh
+            # This MODE gives privileges to user to be operators
+            MODE #channel +o user
+
+            # This MODE removes privileges from users to be operators
+            MODE #channel -o user
+        ```
+
+
+
 ## Project Structure
 
 - `incs/` - Header files
@@ -58,3 +128,5 @@ ft_irc is a project for the 42 curriculum that involves creating an IRC (Interne
 ## Authors
 
 - [Allan Dantas](https://github.com/allandantas21)
+- [Thais Franco](https://github.com/thaiismeneses)
+- [Daniel Bessa](https://github.com/dwbessa)
