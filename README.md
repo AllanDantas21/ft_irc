@@ -109,11 +109,11 @@ ft_irc is a project for the 42 curriculum that involves creating an IRC (Interne
 
         - l: Set/remove the user limit to channel
         ```sh
-            # This MODE gives privileges to user to be operators
-            MODE #channel +o user
+            # This MODE sets a user limit for the channel (e.g., maximum 10 users)
+            MODE #channel +l 10
 
-            # This MODE removes privileges from users to be operators
-            MODE #channel -o user
+            # This MODE removes the user limit for the channel
+            MODE #channel -l
         ```
 
 
