@@ -16,6 +16,7 @@ private:
     int ServerSocketFd;
     static bool HasSignal;
     std::string password;
+    std::string serverName;
     std::vector<Client> clients;
     std::vector<struct pollfd> fds;
     std::vector<Channel*> channels;
@@ -36,6 +37,7 @@ public:
     void CloseFd(int fd);
     void CloseClientFd(int fd);
     void ClearClients(int fd);
+    std::string getServerName() const;
 
     void SetFd(int fd);
     void SetPort(int port);

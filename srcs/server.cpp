@@ -2,7 +2,9 @@
 
 bool Server::HasSignal = false;
 
-Server::Server() : ServerSocketFd(-1) {}
+Server::Server() : ServerSocketFd(-1){
+    serverName = "ft_irc.42.fr";
+}
 Server::~Server() {
     for (size_t i = 0; i < channels.size(); i++) {
         delete channels[i];
@@ -31,6 +33,10 @@ void setupPollFd(int incofd, struct pollfd &NewPoll)
     NewPoll.fd = incofd;
     NewPoll.events = POLLIN;
     NewPoll.revents = 0;
+}
+std::string Server::getServerName() const
+{
+     return serverName;
 }
 
 void Server::ServerConfig() {
@@ -138,7 +144,7 @@ void Server::SignalHandler(int signum) {
 
 void Server::SetupSocketOptions() {
     int en = 1;
-    if (setsockopt(ServerSocketFd, SOL_SOCKET, SO_REUSEADDR, &en, sizeof(en)) == -1) 
+    if (setsockopt(ServerSocketFd, SOL_SOCKET, SO_REUSEADDR, &en, sizeof(en)) == -1)
         throw(std::runtime_error("falha ao definir opção (SO_REUSEADDR) no socket"));
     if (fcntl(ServerSocketFd, F_SETFL, O_NONBLOCK) == -1)
         throw(std::runtime_error("falha ao definir opção (O_NONBLOCK) no socket"));
@@ -155,12 +161,12 @@ void Server::ClearClients(int fd) {
     Client* client = FindClientByFd(fd);
     if (client) {
         std::cout << "Cliente <" << fd << "> Desconectado" << std::endl;
-        
+
         for (size_t i = 0; i < channels.size(); i++) {
             if (channels[i]->hasClient(client)) {
                 std::string partMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getIpAdd() + " PART " + channels[i]->getName() + " :Client disconnected\r\n";
                 channels[i]->broadcastMessage(partMsg, client, this);
-                
+
                 channels[i]->removeClient(client);
             }
         }
@@ -174,7 +180,7 @@ void Server::ClearClients(int fd) {
             break;
         }
     }
-    
+
     CloseClientFd(fd);
     CloseFd(fd);
 }
@@ -251,12 +257,12 @@ void Server::CheckClientAuthentication(Client* client) {
 }
 
 void Server::SendRegistrationCompleteMessage(Client* client) {
-    std::string welcome = client->getNickname() + " :Welcome to the Internet Relay Network " 
+    std::string welcome = client->getNickname() + " :Welcome to the Internet Relay Network "
                          + client->getNickname() + "!" + client->getUsername() + "@" + client->getIpAdd() + "\r\n";
-    
+
     SendToClient(client->GetFd(), welcome);
-    
-    std::cout << GRE << "Cliente <" << client->GetFd() << "> Autenticado como " 
+
+    std::cout << GRE << "Cliente <" << client->GetFd() << "> Autenticado como "
               << client->getNickname() << "!" << client->getUsername() << WHI << std::endl;
 }
 
@@ -274,12 +280,12 @@ Channel* Server::CreateChannel(const std::string& name) {
     if (FindChannelByName(name)) {
         return NULL;
     }
-    
+
     // Validate channel name
     if (!Channel::isValidName(name)) {
         return NULL;
     }
-    
+
     Channel* newChannel = new Channel(name);
     channels.push_back(newChannel);
     return newChannel;
