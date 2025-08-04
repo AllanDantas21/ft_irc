@@ -34,7 +34,7 @@ bool Channel::isValidName(const std::string& attemptName) {
             return false;
         }
     }
-    
+
     return true;
 }
 
@@ -45,7 +45,7 @@ std::string Channel::getName() const {
 bool Channel::addClient(Client* client) {
     std::cout << "DEBUG: Channel::addClient called for " << (client ? client->getNickname() : "NULL") << " to channel " << channelName << std::endl;
     std::cout << "DEBUG: Current client count: " << clientFds.size() << std::endl;
-    
+
     if (!client || hasClient(client)) {
         std::cout << "DEBUG: addClient failed - client is NULL or already in channel" << std::endl;
         return false;
@@ -77,7 +77,7 @@ bool Channel::addClient(Client* client) {
     }
 
     clientFds.push_back(client->GetFd());
-    
+
     std::cout << "DEBUG addClient: After push_back, client FD = " << client->GetFd() << std::endl;
     std::cout << "DEBUG addClient: Verifying stored FD..." << std::endl;
     std::cout << "DEBUG addClient: clientFds[" << (clientFds.size()-1) << "] = " << clientFds[clientFds.size()-1] << std::endl;
@@ -86,7 +86,7 @@ bool Channel::addClient(Client* client) {
         operatorFds.push_back(client->GetFd());
         std::cout << "DEBUG: Client " << client->getNickname() << " is now operator (first in channel)" << std::endl;
     }
-    
+
     std::cout << "DEBUG: addClient successful - channel now has " << clientFds.size() << " clients" << std::endl;
     return true;
 }
@@ -109,13 +109,13 @@ bool Channel::removeClient(Client* client) {
             break;
         }
     }
-    
+
     return true;
 }
 
 bool Channel::hasClient(Client* client) const {
     if (!client) return false;
-    
+
     for (size_t i = 0; i < clientFds.size(); i++) {
         if (clientFds[i] == client->GetFd()) {
             return true;
@@ -126,7 +126,7 @@ bool Channel::hasClient(Client* client) const {
 
 bool Channel::isOperator(Client* client) const {
     if (!client) return false;
-    
+
     for (size_t i = 0; i < operatorFds.size(); i++) {
         if (operatorFds[i] == client->GetFd()) {
             return true;
@@ -136,15 +136,19 @@ bool Channel::isOperator(Client* client) const {
 }
 
 bool Channel::addOperator(Client* client) {
-    if (!hasClient(client) || isOperator(client)) {
+    if (!client ||!hasClient(client) || isOperator(client)) {
         return false;
     }
-    
+
     operatorFds.push_back(client->GetFd());
     return true;
 }
 
 bool Channel::removeOperator(Client* client) {
+    if (!client || !isOperator(client)) {
+        return false;
+    }
+    
     for (size_t i = 0; i < operatorFds.size(); i++) {
         if (operatorFds[i] == client->GetFd()) {
             operatorFds.erase(operatorFds.begin() + i);
@@ -158,17 +162,17 @@ void Channel::broadcastMessage(const std::string& message, Client* sender, Serve
     (void)server; // Mark as used for compilation
     std::cout << "DEBUG broadcastMessage: Broadcasting to " << clientFds.size() << " clients in channel " << channelName << std::endl;
     std::cout << "DEBUG broadcastMessage: Sender FD = " << (sender ? sender->GetFd() : -1) << std::endl;
-    
+
     for (size_t i = 0; i < clientFds.size(); i++) {
         int clientFd = clientFds[i];
         std::cout << "DEBUG broadcastMessage: Client FD = " << clientFd << std::endl;
-        
+
         // Skip sending to sender
         if (sender && clientFd == sender->GetFd()) {
             std::cout << "DEBUG broadcastMessage: Skipping sender (FD " << clientFd << ")" << std::endl;
             continue;
         }
-        
+
         std::cout << "DEBUG broadcastMessage: Sending to client FD " << clientFd << std::endl;
         ssize_t result = send(clientFd, message.c_str(), message.length(), 0);
         if (result == -1) {
@@ -183,7 +187,7 @@ void Channel::setTopic(const std::string& newTopic, Client* setter) {
     if (hasMode('t') && setter != NULL && !isOperator(setter)) {
         return;
     }
-    
+
     topic = newTopic;
     if (setter != NULL) {
         std::string topicMsg = ":" + setter->getNickname() + " TOPIC " + channelName + " :" + newTopic + "\r\n";
@@ -254,7 +258,7 @@ void Channel::setKey(const std::string& newKey) {
 
 bool Channel::isBanned(Client* client) const {
     if (!client) return false;
-    
+
     std::string clientMask = client->getNickname() + "!" + client->getUsername() + "@" + client->getIpAdd();
 
     for (size_t i = 0; i < banList.size(); i++) {
@@ -262,7 +266,7 @@ bool Channel::isBanned(Client* client) const {
             return true;
         }
     }
-    
+
     return false;
 }
 
@@ -316,14 +320,14 @@ std::vector<Client*> Channel::getClients() const {
 }
 
 std::vector<Client*> Channel::getOperators() const {
-    // TODO: Implement this properly - needs server reference  
+    // TODO: Implement this properly - needs server reference
     std::vector<Client*> empty;
     return empty;
 }
 
 std::string Channel::getClientsList(Server* server) const {
     std::cout << "DEBUG getClientsList: Channel " << channelName << " has " << clientFds.size() << " clients" << std::endl;
-    
+
     if (clientFds.empty()) {
         std::cout << "DEBUG getClientsList: No clients in channel" << std::endl;
         return "";
@@ -333,7 +337,7 @@ std::string Channel::getClientsList(Server* server) const {
     for (size_t i = 0; i < clientFds.size(); i++) {
         int clientFd = clientFds[i];
         std::cout << "DEBUG getClientsList: Client FD = " << clientFd << std::endl;
-        
+
         Client* client = server->FindClientByFd(clientFd);
         if (client && !client->getNickname().empty()) {
             if (isOperator(client)) {
@@ -345,7 +349,7 @@ std::string Channel::getClientsList(Server* server) const {
             }
         }
     }
-    
+
     std::string result = ss.str();
     std::cout << "DEBUG getClientsList: Result = '" << result << "'" << std::endl;
     return result;

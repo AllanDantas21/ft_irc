@@ -19,18 +19,19 @@ void Parser::handleTopic(Server *server, const std::string &channelName, const s
         server->SendToClient(clientFd, "403 " + client->getNickname() + " " + channelName + " :No such channel\r\n");
         return;
     }
- 
+
     if (!channel->hasClient(client)) {
         server->SendToClient(clientFd, "442 " + client->getNickname() + " " + channelName + " :You're not on that channel\r\n");
         return;
     }
 
+
     if (topic.empty()) {
         std::string currentTopic = channel->getTopic();
         if (currentTopic.empty()) {
-            server->SendToClient(clientFd, "331 " + client->getNickname() + " " + channelName + " :No topic is set\r\n");
+            server->SendToClient(clientFd, server->getServerName() +  " 331 " + client->getNickname() + " " + channelName + " :No topic is set\r\n");
         } else {
-            server->SendToClient(clientFd, "332 " + client->getNickname() + " " + channelName + " :" + currentTopic + "\r\n");
+            server->SendToClient(clientFd, server->getServerName() +  " 332 " + client->getNickname() + " " + channelName + " :" + currentTopic + "\r\n");
         }
         return;
     }
@@ -39,9 +40,8 @@ void Parser::handleTopic(Server *server, const std::string &channelName, const s
         server->SendToClient(clientFd, "482 " + client->getNickname() + " " + channelName + " :You're not channel operator\r\n");
         return;
     }
-
     channel->setTopic(topic, client);
- 
+
     std::string topicMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getIpAdd() + " TOPIC " + channelName + " :" + topic + "\r\n";
     channel->broadcastMessage(topicMsg, client, server);
 }
