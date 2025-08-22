@@ -102,6 +102,13 @@ void Parser::handleJoin(Server *server, const std::string &channelName, const st
     // Broadcast JOIN to other clients in channel
     channel->broadcastMessage(joinMsg, client, server);
 
+    // Send topic if it exists
+    if (!channel->getTopic().empty()) {
+        server->SendToClient(clientFd, server->getServerName() + " 332 " + client->getNickname() + " " + channelName + " :" + channel->getTopic() + "\r\n");
+    } else {
+        server->SendToClient(clientFd, server->getServerName() + " 331 " + client->getNickname() + " " + channelName + " :No topic is set\r\n");
+    }
+
     // Send names list
     std::string namesList = channel->getClientsList(server);
     server->SendToClient(clientFd, server->getServerName() + " 353 " + client->getNickname() + " = " + channelName + " :" + namesList + "\r\n");
