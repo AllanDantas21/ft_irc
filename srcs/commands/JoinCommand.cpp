@@ -111,5 +111,9 @@ void Parser::handleJoin(Server *server, const std::string &channelName, const st
     if (channel->isBotActive()) {
         std::string greet = ":BOT!bot@server PRIVMSG " + channelName + " :Welcome " + client->getNickname() + "!\r\n";
         channel->broadcastMessage(greet, NULL, server);
+        
+        // Send private help reminder to the new user
+        std::string helpReminder = ":BOT!bot@server PRIVMSG " + client->getNickname() + " :Hi " + client->getNickname() + "! I'm the channel bot. Type !help in the channel to see available commands.\r\n";
+        server->SendToClient(clientFd, helpReminder);
     }
 }
