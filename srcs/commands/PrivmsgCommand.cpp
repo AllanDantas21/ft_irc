@@ -23,6 +23,32 @@ void Parser::handlePrivmsg(Server *server, const std::string &target, const std:
         
         std::string formattedMessage = ":" + sender->getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
         channel->broadcastMessage(formattedMessage, sender, server);
+        // Bot stores last 100 messages
+        if (channel->isBotActive()) {
+            channel->storeMessage("[" + sender->getNickname() + "] " + message);
+            // Bot responds to !datenow
+            if (message == "!datenow") {
+                time_t now = time(0);
+                struct tm *tm_info = localtime(&now);
+                char dateStr[64];
+                strftime(dateStr, sizeof(dateStr), "%Y-%m-%d %H:%M:%S", tm_info);
+                std::string dateMsg = ":BOT!bot@server PRIVMSG " + target + " :Current date and time: " + dateStr + "\r\n";
+                channel->broadcastMessage(dateMsg, NULL, server);
+            }
+            // Bot responds to !history
+            if (message == "!history") {
+                std::deque<std::string> history = channel->getLastMessages();
+                if (history.empty()) {
+                    std::string noMsg = ":BOT!bot@server PRIVMSG " + sender->getNickname() + " :No history available.\r\n";
+                    channel->broadcastMessage(noMsg, NULL, server);
+                } else {
+                    for (std::deque<std::string>::const_iterator it = history.begin(); it != history.end(); ++it) {
+                        std::string histMsg = ":BOT!bot@server PRIVMSG " + sender->getNickname() + " :" + *it + "\r\n";
+                        channel->broadcastMessage(histMsg, NULL, server);
+                    }
+                }
+            }
+        }
     } else {
         Client* recipient = server->FindClientByNickname(target);
         if (!recipient) {
