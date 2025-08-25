@@ -1,12 +1,11 @@
-#include "DccServer.hpp"
+#include "../incs/DccServer.hpp"
 #include <fstream>
 #include <cstring>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/stat.h>
+#include <errno.h>
+
 
 DccServer::DccServer(const std::string& filename, const std::string& recipient):
-	 _sockfd(-1), _filename(filename), _recipient(recipient), _port(0), _isActive(false)
+	 _sockfd(-1), _filename(filename), _filesize(0), _recipient(recipient), _port(0), _isActive(false)
 {
 	struct stat st;
 	if (stat(filename.c_str(), &st) == 0)
@@ -22,14 +21,14 @@ DccServer::~DccServer()
 bool DccServer::isActive() const { return _isActive; }
 int DccServer::getSockfd() const { return _sockfd; }
 
-bool DccServer::init()
+int DccServer::init()
 {
 	// Create socket
 	_sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (_sockfd < 0)
 	{
-		perror("socket");
-		return false;
+		std::cerr << "Error: creating socket DCC" << std::endl;
+		return (-1);
 	}
 
 	//config socket non-blocking
@@ -46,30 +45,30 @@ bool DccServer::init()
 	//bind
 	if (bind(_sockfd, (struct sockaddr *)&addr, sizeof(addr)) < 0)
 	{
-		perror("bind");
+		std::cerr << "Error: binding socket DCC" << std::endl;
 		close(_sockfd);
-		return false;
+		return (-1);
 	}
 
 	//get port
-	struct sockaddr_in bound_addr;
-	socklen_t addr_len = sizeof(bound_addr);
-	if (getsockname(_sockfd, (struct sockaddr*)&bound_addr, &addr_len) < 0)
+	socklen_t addr_len = sizeof(addr);
+	if (getsockname(_sockfd, (struct sockaddr*)&addr, &addr_len) < 0)
 	{
-		perror("getsockname");
+		std::cerr << "Error: getting socket name DCC" << std::endl;
 		close(_sockfd);
-		return false;
+		return (-1);
 	}
 
-	_port = ntohs(bound_addr.sin_port);
+	_port = ntohs(addr.sin_port);
 	//init listen
 	if (listen(_sockfd, 1) < 0)
 	{
+		std::cerr << "Error: listening socket DCC" << std::endl;
 		close (_sockfd);
-		return false;
+		return (-1);
 	}
 	_isActive = true;
-	return true;
+	return (_sockfd);
 }
 
 std::string DccServer::createDccMessage(const std::string &localIp) const
@@ -77,11 +76,10 @@ std::string DccServer::createDccMessage(const std::string &localIp) const
 	//convert IP to number format (required by DCC)
 	uint32_t ip_num  = inet_addr(localIp.c_str());
 
-	// Create the DCC message
-	return "PRIVMSG " + _recipient + " :\001DCC SEND " + _filename + " " +
-			std::to_string(ntohl(ip_num)) + " " +
-			std::to_string(_port) + " " +
-			std::to_string(_filesize) + "\001\r\n";
+	return ("PRIVMSG " + _recipient + " :\001DCC SEND " + _filename + " "
+		+ std::to_string(ntohl(ip_num)) + " "
+		+ std::to_string(_port) + " "
+		+ std::to_string(_filesize) + "\001\r\n");
 }
 
 bool DccServer::handleConnection()
@@ -95,11 +93,15 @@ bool DccServer::handleConnection()
 		return false;
 	}
 
+	std::cout << "DCC connection established with " << _recipient << std::endl;
+	std::cout << "Sending file: " << _filename << " (" << _filesize << " bytes)" << std::endl;
+
 	//open file to read in binary mode
-	std::ifstream file(_filename, std::ios::binary);
+	std::ifstream file(_filename.c_str(), std::ios::binary);
 	if (!file)
 	{
 		close(client_fd);
+		_isActive = false;
 		return false;
 	}
 
@@ -112,14 +114,17 @@ bool DccServer::handleConnection()
 		//send file chunk
 		if (send(client_fd, buffer, bytes_read, 0) < 0)
 		{
+			file.close();
 			close(client_fd);
+			_isActive = false;
 			return false;
 		}
 	}
 	file.close();
 	close(client_fd);
 	_isActive = false; //connection is done
-	return true;
+	std::cout << "File " << _filename << " sent successfully." << std::endl;
+	return false;
 }
 
 

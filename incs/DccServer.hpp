@@ -4,6 +4,11 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <iostream>
+#include <stdexcept>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 
 class DccServer {
@@ -19,8 +24,7 @@ class DccServer {
 		DccServer(const std::string& filename, const std::string& recipient);
 		~DccServer();
 
-		bool init();
-		uint16_t getPort() const;
+		int32_t init();
 		std::string createDccMessage(const std::string &localIP) const;
 		bool handleConnection();
 		bool isActive() const;
