@@ -67,6 +67,8 @@ public:
     void RemoveEmptyChannels();
     std::vector<Channel*> GetChannels() const;
     void HandleDccEvents(int fd);
+    void addPollFd(const struct pollfd& NewFd);
+    void addDccServer(DccServer* NewDccServer);
 };
 
 #endif

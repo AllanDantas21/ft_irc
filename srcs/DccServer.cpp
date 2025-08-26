@@ -2,6 +2,7 @@
 #include <fstream>
 #include <cstring>
 #include <errno.h>
+#include <sstream>
 
 
 DccServer::DccServer(const std::string& filename, const std::string& recipient):
@@ -76,10 +77,9 @@ std::string DccServer::createDccMessage(const std::string &localIp) const
 	//convert IP to number format (required by DCC)
 	uint32_t ip_num  = inet_addr(localIp.c_str());
 
-	return ("PRIVMSG " + _recipient + " :\001DCC SEND " + _filename + " "
-		+ std::to_string(ntohl(ip_num)) + " "
-		+ std::to_string(_port) + " "
-		+ std::to_string(_filesize) + "\001\r\n");
+	std::stringstream ss;
+	ss << ntohl(ip_num) << " " << _port << " " << _filesize;
+	return ("PRIVMSG " + _recipient + " :\001DCC SEND " + _filename + " " + ss.str() + "\001\r\n");
 }
 
 bool DccServer::handleConnection()
@@ -126,5 +126,6 @@ bool DccServer::handleConnection()
 	std::cout << "File " << _filename << " sent successfully." << std::endl;
 	return false;
 }
+
 
 

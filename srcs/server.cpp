@@ -350,3 +350,11 @@ void Server::HandleDccEvents(int fd)
 		}
 	}
 }
+void Server::addPollFd(const struct pollfd& NewFd)
+{
+	this->fds.push_back(NewFd);
+}
+void Server::addDccServer(DccServer* NewDccServer)
+{
+	this->dccServers.push_back(NewDccServer);
+}
