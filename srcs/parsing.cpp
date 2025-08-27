@@ -4,8 +4,18 @@
 
 void Parser::handleDccSend(Server *server, const std::string &message, const std::string &target, int clientFd)
 {
+	size_t dccPos = message.find("DCC SEND ");
+	if (dccPos == std::string::npos)
+	{
+		server->SendToClient(clientFd, "Error: Invalid DCC SEND format\r\n");
+		return;
+	}
+
+	std::string dccParams = message.substr(dccPos + 9); // +9 para pular "DCC SEND "
+
 	std::string Filename, IpStr, PortStr, SizeStr;
-	std::istringstream DccIss(message.substr(11));
+	std::istringstream DccIss(dccParams);
+
 	DccIss >> Filename >> IpStr >> PortStr >> SizeStr;
 
 	Client* sender = server->FindClientByFd(clientFd);
@@ -15,7 +25,7 @@ void Parser::handleDccSend(Server *server, const std::string &message, const std
 		return;
 
 	DccServer* dccServer = new DccServer(Filename, target);
-	if (dccServer->init() < -1)
+	if (dccServer->init() != -1)
 	{
 		struct pollfd newPollFd;
 		newPollFd.fd = dccServer->getSockfd();
@@ -85,12 +95,18 @@ void Parser::MainParser(Server *server, char *buffer, int clientFd) {
 			message = buff.substr(pos + 1);
 		}
 
-		if (message.length() > 11 && message.substr(0,11) == "\00DCC SEND ")
+		std::cout << "DEBUG: message " << message << std::endl;
+		std::cout << "DEBUG: Message length: " << message.length() << std::endl;
+		if (message.find("\\001DCC SEND ") == 0)
 		{
+			std::cout << "DEBUG: Detected DCC SEND command in PRIVMSG" << std::endl;
 			handleDccSend(server, message, target, clientFd);
 		}
 		else
+		{
+			std::cout << "DEBUG: Detected regular PRIVMSG command" << std::endl;
 			handlePrivmsg(server, target, message, clientFd);
+		}
 	}
 	else if (command == "JOIN") {
 		std::string channelName, key;
