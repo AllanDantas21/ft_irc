@@ -12,6 +12,10 @@ Server::~Server() {
 	for (size_t i = 0; i < dccServers.size(); i++) {
 		delete dccServers[i];
 	}
+	for (size_t i = 0; i < dccClients.size(); i++) {
+		delete dccClients[i];
+	}
+	dccClients.clear();
 	dccServers.clear();
 	channels.clear();
 }
@@ -349,6 +353,20 @@ void Server::HandleDccEvents(int fd)
 			return ;
 		}
 	}
+
+	for (size_t i = 0; i < dccClients.size(); i++)
+	{
+		if (dccClients[i]->getSockfd() == fd)
+		{
+			if (!dccClients[i]->receiveFile())
+			{
+				close(fd);
+				delete dccClients[i];
+				dccClients.erase(dccClients.begin() + i);
+			}
+			return ;
+		}
+	}
 }
 void Server::addPollFd(const struct pollfd& NewFd)
 {
@@ -357,4 +375,8 @@ void Server::addPollFd(const struct pollfd& NewFd)
 void Server::addDccServer(DccServer* NewDccServer)
 {
 	this->dccServers.push_back(NewDccServer);
+}
+void Server::addDccClient(DccClient* NewDccClient)
+{
+	this->dccClients.push_back(NewDccClient);
 }

@@ -10,12 +10,20 @@ DccServer::DccServer(const std::string& filename, const std::string& recipient):
 {
 	struct stat st;
 	if (stat(filename.c_str(), &st) == 0)
+	{
 		_filesize = st.st_size;
+		std::cout << "DEBUG: DccServer found file '" << filename << "'. Size: " << _filesize << " bytes." << std::endl;
+
+	}
+	else
+	{
+		std::cout << "DEBUG: DccServer failed to find file '" << filename << "'. Error: " << strerror(errno) << std::endl;
+	}
 }
 
 DccServer::~DccServer()
 {
-	if (_sockfd == -1)
+	if (_sockfd != -1)
 		close(_sockfd);
 }
 

@@ -2,29 +2,21 @@
 #include <sstream>
 
 
-void Parser::handleDccSend(Server *server, const std::string &message, const std::string &target, int clientFd)
+void Parser::handleDccSend(Server *server, const std::string &target, const std::string &filename, int clientFd)
 {
-	size_t dccPos = message.find("DCC SEND ");
-	if (dccPos == std::string::npos)
-	{
-		server->SendToClient(clientFd, "Error: Invalid DCC SEND format\r\n");
-		return;
-	}
-
-	std::string dccParams = message.substr(dccPos + 9); // +9 para pular "DCC SEND "
-
-	std::string Filename, IpStr, PortStr, SizeStr;
-	std::istringstream DccIss(dccParams);
-
-	DccIss >> Filename >> IpStr >> PortStr >> SizeStr;
-
 	Client* sender = server->FindClientByFd(clientFd);
-	std::cout << "DEBUG: DCC SEND command parsed: Filename='" << Filename << "', IP='" << IpStr << "', Port='" << PortStr << "', Size='" << SizeStr << "'" << std::endl;
-	std::cout << "DEBUG: DCC SEND from clientFd=" << clientFd << " (nickname='" << (sender ? sender->getNickname() : "unknown") << "')" << std::endl;
 	if (!sender)
 		return;
 
-	DccServer* dccServer = new DccServer(Filename, target);
+	struct stat st;
+	if (stat(filename.c_str(), &st) != 0) {
+		server->SendToClient(clientFd, "Error: File '" + filename + "' not found\r\n");
+		return;
+	}
+	size_t fileSize = static_cast<size_t>(st.st_size);
+	std::string localIP = sender->getIpAdd();
+	std::string PortStr = "0";
+	DccServer* dccServer = new DccServer(filename, target);
 	if (dccServer->init() != -1)
 	{
 		struct pollfd newPollFd;
@@ -33,19 +25,55 @@ void Parser::handleDccSend(Server *server, const std::string &message, const std
 		server->addPollFd(newPollFd);
 		server->addDccServer(dccServer);
 
-		std::string localIP = sender->getIpAdd();
-		std::string dccMessage = dccServer->createDccMessage(localIP);
+		std::stringstream ss;
+		ss << "DCC SEND " << filename << " " << localIP << " " << PortStr << " " << fileSize << "\r\n";
+
 		Client* recipient = server->FindClientByNickname(target);
 		std::cout << "DEBUG: DCC SEND to target='" << target << "' (nickname='" << (recipient ? recipient->getNickname() : "unknown") << "')" << std::endl;
 		if (recipient)
 		{
-			server->SendToClient(recipient->GetFd(), dccMessage);
+			recipient->setDccMessage(ss.str());
+			server->SendToClient(recipient->GetFd(), dccServer->createDccMessage(localIP));
 		}
 	}
 	else
 	{
 		delete dccServer;
 		server->SendToClient(clientFd, "Error: Unable to initiate DCC connection\r\n");
+	}
+}
+
+void Parser::handleDccGet(Server *server, const std::string &targetNick, int clientFd)
+{
+	Client* client = server->FindClientByFd(clientFd);
+	Client* sender = server->FindClientByNickname(targetNick);
+	if (!client || !sender) return;
+	std::string dccMessage = sender->getDccMessage();
+	if (dccMessage.empty())
+	{
+		server->SendToClient(clientFd, "Error: No DCC SEND message found for user '" + targetNick + "'\r\n");
+		return;
+	}
+	size_t dccPos = dccMessage.find("DCC SEND ");
+	std::string dccParams = dccMessage.substr(dccPos + 9);
+	std::string Filename, IpStr, PortStr, SizeStr;
+	std::istringstream DccIss(dccParams);
+	DccIss >> Filename >> IpStr >> PortStr >> SizeStr;
+
+	DccClient* dccClient = new DccClient(Filename, IpStr, atoi(PortStr.c_str()), static_cast<size_t>(atoi(SizeStr.c_str())), clientFd);
+	if (dccClient->init() != -1)
+	{
+		struct pollfd newPollFd;
+		newPollFd.fd = dccClient->getSockfd();
+		newPollFd.events = POLLIN;
+		server->addPollFd(newPollFd);
+		server->addDccClient(dccClient);
+		server->SendToClient(clientFd, "DCC GET initiated for file '" + Filename + "' from user '" + targetNick + "'\r\n");
+	}
+	else
+	{
+		delete dccClient;
+		server->SendToClient(clientFd, "Error: Unable to initiate DCC transfer\r\n");
 	}
 }
 
@@ -95,24 +123,12 @@ void Parser::MainParser(Server *server, char *buffer, int clientFd) {
 			message = buff.substr(pos + 1);
 		}
 
-		std::cout << "DEBUG: message " << message << std::endl;
-		std::cout << "DEBUG: Message length: " << message.length() << std::endl;
-		if (message.find("\\001DCC SEND ") == 0)
-		{
-			std::cout << "DEBUG: Detected DCC SEND command in PRIVMSG" << std::endl;
-			handleDccSend(server, message, target, clientFd);
-		}
-		else
-		{
-			std::cout << "DEBUG: Detected regular PRIVMSG command" << std::endl;
-			handlePrivmsg(server, target, message, clientFd);
-		}
+		handlePrivmsg(server, target, message, clientFd);
 	}
 	else if (command == "JOIN") {
 		std::string channelName, key;
 
 		iss >> channelName;
-
 		if (channelName.empty()) {
 			server->SendToClient(clientFd, "461 * JOIN :Not enough parameters\r\n");
 			return;
@@ -182,6 +198,31 @@ void Parser::MainParser(Server *server, char *buffer, int clientFd) {
 
 		std::cout << "DEBUG MODE PARSING: target='" << target << "', modes='" << modes << "', params='" << params << "'" << std::endl;
 		handleMode(server, target, modes, params, clientFd);  // Pass params too
+	}
+	else if (command == "DCC")
+	{
+		std::string commandType;
+		iss >> commandType;
+
+		if (commandType == "SEND ") {
+			std::string target, message;
+			iss >> target;
+			size_t pos = buff.find(':', 0);
+			if (pos != std::string::npos)
+				message = buff.substr(pos + 1);
+			std::cout << "DEBUG: Detected DCC SEND command" << std::endl;
+			handleDccSend(server, message, target, clientFd);
+		}
+		else if (commandType == "GET") {
+			std::string targetNick, filename;
+			iss >> targetNick >> filename;
+			std::cout << "DEBUG: Detected DCC GET command" << std::endl;
+			handleDccGet(server, targetNick, clientFd);
+		}
+		else
+		{
+			server->SendToClient(clientFd, "421 * DCC " + commandType + " :Unknown DCC command\r\n");
+		}
 	}
 	else {
 		server->SendToClient(clientFd, "421 * " + command + " :Unknown command\r\n");
