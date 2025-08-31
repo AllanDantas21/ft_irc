@@ -7,16 +7,19 @@ void Parser::handleDccSend(Server *server, const std::string &target, const std:
 	Client* sender = server->FindClientByFd(clientFd);
 	if (!sender)
 		return;
-
+	std::string cleanFilename = filename;
+	if (!cleanFilename.empty() && cleanFilename[cleanFilename.length() - 1] == '\001') {
+		cleanFilename.erase(cleanFilename.length() - 1);
+	}
 	struct stat st;
-	if (stat(filename.c_str(), &st) != 0) {
-		server->SendToClient(clientFd, "Error: File '" + filename + "' not found\r\n");
+	if (stat(cleanFilename.c_str(), &st) != 0) {
+		server->SendToClient(clientFd, "Error: File '" + cleanFilename + "' not found\r\n");
 		return;
 	}
 	size_t fileSize = static_cast<size_t>(st.st_size);
 	std::string localIP = sender->getIpAdd();
-	std::string PortStr = "0";
-	DccServer* dccServer = new DccServer(filename, target);
+
+	DccServer* dccServer = new DccServer(cleanFilename, target);
 	if (dccServer->init() != -1)
 	{
 		struct pollfd newPollFd;
@@ -25,15 +28,21 @@ void Parser::handleDccSend(Server *server, const std::string &target, const std:
 		server->addPollFd(newPollFd);
 		server->addDccServer(dccServer);
 
+		// Convert IP to numeric format
+		uint32_t ip_num = inet_addr(localIP.c_str());
+
 		std::stringstream ss;
-		ss << "DCC SEND " << filename << " " << localIP << " " << PortStr << " " << fileSize << "\r\n";
+		ss << "\001DCC SEND " << cleanFilename << " " << ntohl(ip_num) << " " << dccServer->getPort() << " " << fileSize << "\001";
 
 		Client* recipient = server->FindClientByNickname(target);
 		std::cout << "DEBUG: DCC SEND to target='" << target << "' (nickname='" << (recipient ? recipient->getNickname() : "unknown") << "')" << std::endl;
+		std::cout << "DEBUG: DCC parameters - IP: " << localIP << " (" << ntohl(ip_num) << "), Port: " << dccServer->getPort() << ", Size: " << fileSize << std::endl;
+
 		if (recipient)
 		{
 			recipient->setDccMessage(ss.str());
-			server->SendToClient(recipient->GetFd(), dccServer->createDccMessage(localIP));
+			std::string msg = ":" + sender->getNickname() + " PRIVMSG " + target + " :" + ss.str() + "\r\n";
+			server->SendToClient(recipient->GetFd(), msg);
 		}
 	}
 	else
@@ -43,12 +52,12 @@ void Parser::handleDccSend(Server *server, const std::string &target, const std:
 	}
 }
 
-void Parser::handleDccGet(Server *server, const std::string &targetNick, int clientFd)
+void Parser::handleDccGet(Server *server, const std::string &targetNick, const std::string &, int clientFd)
 {
 	Client* client = server->FindClientByFd(clientFd);
 	Client* sender = server->FindClientByNickname(targetNick);
 	if (!client || !sender) return;
-	std::string dccMessage = sender->getDccMessage();
+	std::string dccMessage = client->getDccMessage();
 	if (dccMessage.empty())
 	{
 		server->SendToClient(clientFd, "Error: No DCC SEND message found for user '" + targetNick + "'\r\n");
@@ -56,9 +65,20 @@ void Parser::handleDccGet(Server *server, const std::string &targetNick, int cli
 	}
 	size_t dccPos = dccMessage.find("DCC SEND ");
 	std::string dccParams = dccMessage.substr(dccPos + 9);
-	std::string Filename, IpStr, PortStr, SizeStr;
+	std::string Filename, IpNumStr, PortStr, SizeStr;
 	std::istringstream DccIss(dccParams);
-	DccIss >> Filename >> IpStr >> PortStr >> SizeStr;
+	DccIss >> Filename;
+	if (!Filename.empty() && Filename[Filename.length() - 1] == '\001') {
+		Filename = Filename.substr(0, Filename.length() - 1);
+	}
+	DccIss >> IpNumStr >> PortStr >> SizeStr;
+
+	// Convert numeric IP back to string format
+	uint32_t ip_num;
+	std::istringstream(IpNumStr) >> ip_num;
+	struct in_addr addr;
+	addr.s_addr = htonl(ip_num);
+	std::string IpStr = inet_ntoa(addr);
 
 	DccClient* dccClient = new DccClient(Filename, IpStr, atoi(PortStr.c_str()), static_cast<size_t>(atoi(SizeStr.c_str())), clientFd);
 	if (dccClient->init() != -1)
@@ -123,7 +143,18 @@ void Parser::MainParser(Server *server, char *buffer, int clientFd) {
 			message = buff.substr(pos + 1);
 		}
 
-		handlePrivmsg(server, target, message, clientFd);
+		if (message.find("\001DCC SEND ") == 0)
+		{
+			std::string dccCommand, filename;
+			std::istringstream tempStream(message.substr(1)); // Skip the \001
+			tempStream >> dccCommand >> dccCommand >> filename; // Read "DCC SEND filename"
+			if (!filename.empty() && filename[filename.length() - 1] == '\001') {
+				filename = filename.substr(0, filename.length() - 1);
+			}
+			handleDccSend(server, target, filename, clientFd);
+		}
+		else
+			handlePrivmsg(server, target, message, clientFd);
 	}
 	else if (command == "JOIN") {
 		std::string channelName, key;
@@ -201,23 +232,21 @@ void Parser::MainParser(Server *server, char *buffer, int clientFd) {
 	}
 	else if (command == "DCC")
 	{
-		std::string commandType;
-		iss >> commandType;
+		std::string commandType, targetNick, filename, saveAs;
+		iss >> commandType >> targetNick >> filename;
 
-		if (commandType == "SEND ") {
-			std::string target, message;
-			iss >> target;
-			size_t pos = buff.find(':', 0);
-			if (pos != std::string::npos)
-				message = buff.substr(pos + 1);
+		// Get optional save-as filename for GET command
+		if (commandType == "GET") {
+			iss >> saveAs;
+		}
+
+		if (commandType == "SEND") {
 			std::cout << "DEBUG: Detected DCC SEND command" << std::endl;
-			handleDccSend(server, message, target, clientFd);
+			handleDccSend(server, targetNick, filename, clientFd);
 		}
 		else if (commandType == "GET") {
-			std::string targetNick, filename;
-			iss >> targetNick >> filename;
 			std::cout << "DEBUG: Detected DCC GET command" << std::endl;
-			handleDccGet(server, targetNick, clientFd);
+			handleDccGet(server, targetNick, saveAs.empty() ? filename : saveAs, clientFd);
 		}
 		else
 		{

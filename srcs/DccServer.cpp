@@ -29,6 +29,7 @@ DccServer::~DccServer()
 
 bool DccServer::isActive() const { return _isActive; }
 int DccServer::getSockfd() const { return _sockfd; }
+uint16_t DccServer::getPort() const { return _port; }
 
 int DccServer::init()
 {
@@ -87,7 +88,7 @@ std::string DccServer::createDccMessage(const std::string &localIp) const
 
 	std::stringstream ss;
 	ss << ntohl(ip_num) << " " << _port << " " << _filesize;
-	return ("PRIVMSG " + _recipient + " :\001DCC SEND " + _filename + " " + ss.str() + "\001\r\n");
+	return ("PRIVMSG " + _recipient + " :DCC SEND " + _filename + " " + ss.str() + "\r\n");
 }
 
 bool DccServer::handleConnection()

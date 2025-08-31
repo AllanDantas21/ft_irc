@@ -3,12 +3,38 @@
 #include <cstdio>
 #include <cstring>
 #include <errno.h>
+#include <fcntl.h>
 
 DccClient::DccClient(const std::string &filename, const std::string &host, int port, size_t filesize, int clientFd)
-    : _filename(filename), _host(host), _port(port), _filesize(filesize), _sockfd(-1), _clientFd(clientFd), _isActive(false) {}
+    : _filename(filename), _host(host), _port(port), _filesize(filesize), _sockfd(-1), _clientFd(clientFd), _isActive(false), _totalBytesReceived(0)
+{
+	std::string uniqueName = filename;
+	int counter = 1;
+
+	// Se o arquivo já existe, adiciona um número ao nome
+	while (access(uniqueName.c_str(), F_OK) == 0) {
+		std::stringstream ss;
+		ss << filename << "." << counter++;
+		uniqueName = ss.str();
+	}
+	_filename = uniqueName;
+
+	// Criar um arquivo temporário
+	std::string tempFilename = _filename + ".part";
+	this->_outputFile.open(tempFilename.c_str(), std::ios::binary);
+	if (!this->_outputFile)
+	{
+		std::cerr << "Error: creating output file" << std::endl;
+		std::stringstream ss;
+		ss << "Error: Could not create file '" << _filename << "'\r\n";
+		send(clientFd, ss.str().c_str(), ss.str().length(), 0);
+	}
+}
 
 
 DccClient::~DccClient() {
+	if (this->_outputFile.is_open())
+		this->_outputFile.close();
 	if (_sockfd != -1)
 		close(_sockfd);
 }
@@ -19,12 +45,18 @@ int DccClient::getClientFd() { return _clientFd; }
 
 int DccClient::init()
 {
+	std::cout << "DEBUG: Initializing DCC client for file: " << _filename << std::endl;
+	std::cout << "DEBUG: Connecting to " << _host << ":" << _port << std::endl;
+
 	_sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (_sockfd < 0)
 	{
-		std::cerr << "Error: creating socket DCC Client" << std::endl;
+		std::cerr << "Error: creating socket DCC Client: " << strerror(errno) << std::endl;
 		return (-1);
 	}
+
+	int flags = fcntl(_sockfd, F_GETFL, 0);
+	fcntl(_sockfd, F_SETFL, flags | O_NONBLOCK);
 
 	struct sockaddr_in serv_addr;
 	memset(&serv_addr, 0, sizeof(serv_addr));
@@ -32,12 +64,25 @@ int DccClient::init()
 	serv_addr.sin_port = htons(_port);
 	serv_addr.sin_addr.s_addr = inet_addr(_host.c_str());
 
-	if(connect(_sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+	if (_host.empty() || _port <= 0)
 	{
-		std::cerr << "Error: connecting to DCC server" << std::endl;
+		std::cerr << "Error: Invalid host or port" << std::endl;
 		close(_sockfd);
 		_sockfd = -1;
 		return (-1);
+	}
+
+	std::cout << "DEBUG: Attempting connection to " << inet_ntoa(serv_addr.sin_addr) << ":" << ntohs(serv_addr.sin_port) << std::endl;
+
+	if(connect(_sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+	{
+		if (errno != EINPROGRESS)
+		{
+			std::cerr << "Error connecting to DCC server: " << strerror(errno) << std::endl;
+			close(_sockfd);
+			_sockfd = -1;
+			return (-1);
+		}
 	}
 	_isActive = true;
 	return (_sockfd);
@@ -45,36 +90,57 @@ int DccClient::init()
 
 bool DccClient::receiveFile()
 {
-	std::ofstream outputFile(_filename.c_str(), std::ios::binary);
-	if (!outputFile)
+	char buffer[1024];
+	ssize_t bytesReceived = recv(_sockfd, buffer, sizeof(buffer), 0);
+	if (bytesReceived <= 0)
 	{
-		std::cerr << "Error: creating output file" << std::endl;
+		if (bytesReceived == 0)
+		{
+			if (_totalBytesReceived == _filesize)
+			{
+				std::cout << "File received successfully: " << _filename << std::endl;
+				_outputFile.close();
+				std::stringstream ss;
+				ss << "File '" << _filename << "' received successfully. Size: " << _totalBytesReceived << " bytes.\r\n";
+				send(_clientFd, ss.str().c_str(), ss.str().length(), 0);
+			}
+			else
+			{
+				std::cerr << "Error: Connection closed prematurely" << std::endl;
+				_outputFile.close();
+				// Criar um arquivo temporário e só renomear para o nome final se a transferência for bem sucedida
+				std::string tempFilename = "received_" + _filename;
+				rename(tempFilename.c_str(), _filename.c_str());
+				std::stringstream ss;
+				ss << "Error: File transfer failed - Connection closed prematurely\r\n";
+				send(_clientFd, ss.str().c_str(), ss.str().length(), 0);
+			}
+		}
+		else
+		{
+			std::cerr << "Error: Lost connection or failed to receive file data" << std::endl;
+			_outputFile.close();
+			std::string tempFilename = "received_" + _filename;
+			remove(tempFilename.c_str());
+			std::stringstream ss;l64a
+			ss << "Error: File transfer failed - Lost connection\r\n";
+			send(_clientFd, ss.str().c_str(), ss.str().length(), 0);
+		}
 		_isActive = false;
 		return false;
 	}
+	this->_outputFile.write(buffer, bytesReceived);
+	_totalBytesReceived += bytesReceived;
+	int progress = (_filesize > 0) ? (static_cast<float>(_totalBytesReceived) / _filesize) * 100 : 100;
+    std::stringstream ss;
+    ss << "Recebendo " << _filename << ": " << progress << "% completo.\r\n";
+    send(_clientFd, ss.str().c_str(), ss.str().length(), 0);
 
-	char buffer[1024];
-	size_t totalBytesReceived = 0;
-	while (totalBytesReceived < _filesize)
-	{
-		ssize_t bytesReceived = recv(_sockfd, buffer, sizeof(buffer), 0);
-		if (bytesReceived <= 0)
-		{
-			std::cerr << "Error: Lost connection or failed to receive file data" << std::endl;
-			outputFile.close();
-			remove(_filename.c_str());
-			_isActive = false;
-			return false;
-		}
-		outputFile.write(buffer, bytesReceived);
-		totalBytesReceived += bytesReceived;
-		int progress = (static_cast<float>(totalBytesReceived) / _filesize) * 100;
-		std::stringstream ss;
-        ss << "Recebendo " << _filename << ": " << progress << "% completo.\r\n";
-        send(_clientFd, ss.str().c_str(), ss.str().length(), 0);
-	}
-	outputFile.close();
-	std::cout << "File received successfully: " << _filename << std::endl;
-	_isActive = false;
-	return false;
+    if (_totalBytesReceived >= _filesize) {
+        std::cout << "File received successfully: " << _filename << std::endl;
+        _isActive = false;
+        return false;
+    }
+
+    return true;
 }

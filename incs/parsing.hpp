@@ -20,7 +20,7 @@ private:
     static void handleInvite(Server *server, const std::string &targetNick, const std::string &channelName, int clientFd);
     static void handleMode(Server *server, const std::string &target, const std::string &modes, const std::string &params, int clientFd);
     static void handleDccSend(Server *server, const std::string &target, const std::string &filename, int clientFd);
-    static void handleDccGet(Server *server, const std::string &targetNick, int clientFd);
+    static void handleDccGet(Server *server, const std::string &targetNick,const std::string &filename, int clientFd);
 };
 
 #endif

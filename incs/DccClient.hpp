@@ -21,6 +21,8 @@ class DccClient
 		int _sockfd;
 		int _clientFd;
 		bool _isActive;
+		std::ofstream _outputFile;
+		size_t _totalBytesReceived;
 
 	public:
 		DccClient(const std::string &filename, const std::string &host, int port, size_t filesize, int c);

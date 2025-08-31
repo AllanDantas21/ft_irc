@@ -29,5 +29,6 @@ class DccServer {
 		bool handleConnection();
 		bool isActive() const;
 		int getSockfd() const;
+		uint16_t getPort() const;
 
 };
