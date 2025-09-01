@@ -122,7 +122,7 @@ bool DccClient::receiveFile()
 			_outputFile.close();
 			std::string tempFilename = "received_" + _filename;
 			remove(tempFilename.c_str());
-			std::stringstream ss;l64a
+			std::stringstream ss;
 			ss << "Error: File transfer failed - Lost connection\r\n";
 			send(_clientFd, ss.str().c_str(), ss.str().length(), 0);
 		}

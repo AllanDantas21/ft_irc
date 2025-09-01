@@ -32,7 +32,7 @@ void Parser::handleDccSend(Server *server, const std::string &target, const std:
 		uint32_t ip_num = inet_addr(localIP.c_str());
 
 		std::stringstream ss;
-		ss << "\001DCC SEND " << cleanFilename << " " << ntohl(ip_num) << " " << dccServer->getPort() << " " << fileSize << "\001";
+		ss << "DCC SEND " << cleanFilename << " " << ntohl(ip_num) << " " << dccServer->getPort() << " " << fileSize;
 
 		Client* recipient = server->FindClientByNickname(target);
 		std::cout << "DEBUG: DCC SEND to target='" << target << "' (nickname='" << (recipient ? recipient->getNickname() : "unknown") << "')" << std::endl;
@@ -143,14 +143,23 @@ void Parser::MainParser(Server *server, char *buffer, int clientFd) {
 			message = buff.substr(pos + 1);
 		}
 
-		if (message.find("\001DCC SEND ") == 0)
+		if (message.find("\\001DCC SEND ") == 0)
 		{
 			std::string dccCommand, filename;
 			std::istringstream tempStream(message.substr(1)); // Skip the \001
 			tempStream >> dccCommand >> dccCommand >> filename; // Read "DCC SEND filename"
-			if (!filename.empty() && filename[filename.length() - 1] == '\001') {
-				filename = filename.substr(0, filename.length() - 1);
+
+			std::cout << "DEBUG: Detected DCC SEND command in PRIVMSG" << std::endl;
+			std::cout << "DEBUG: DCC parameters - Filename before cleaning: '" << filename << "'" << std::endl;
+			// Remove trailing \001 character
+			size_t controlCharPos = filename.find("\\001");
+			if (controlCharPos != std::string::npos) {
+				std::cout << "DEBUG: DCC parameters - Filename CLEANING"<< std::endl;
+				filename.erase(controlCharPos);
 			}
+			std::cout << "DEBUG: DCC parameters - Filename after cleaning: '" << filename << "'" << std::endl;
+			std::cout << "DEBUG: DCC parameters - Target: '" << target << "'" << std::endl;
+			std::cout << "DEBUG: Full DCC message: " << message << std::endl;
 			handleDccSend(server, target, filename, clientFd);
 		}
 		else
