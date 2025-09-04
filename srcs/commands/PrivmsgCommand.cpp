@@ -1,4 +1,10 @@
 #include "../../incs/ircserv.hpp"
+#include <cstdio>
+#include <cstdlib>
+#include <sstream>
+
+std::string getWeatherData(const std::string& location);
+std::string parseWeatherResponse(const std::string& jsonData);
 bool isValidOperation(Server *server, Client *sender, const std::string &target, const std::string &message, int clientFd);
 
 void Parser::handlePrivmsg(Server *server, const std::string &target, const std::string &message, int clientFd) {
@@ -23,6 +29,53 @@ void Parser::handlePrivmsg(Server *server, const std::string &target, const std:
         
         std::string formattedMessage = ":" + sender->getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
         channel->broadcastMessage(formattedMessage, sender, server);
+        // Bot stores last 100 messages
+        if (channel->isBotActive()) {
+            channel->storeMessage("[" + sender->getNickname() + "] " + message);
+            // Bot responds to !help
+            if (message == "!help") {
+                std::string helpMsg = ":BOT!bot@server PRIVMSG " + target + " :\nAvailable bot commands:\n!help\n!datenow\n!weather <location>\n!history\r\n";
+                channel->broadcastMessage(helpMsg, NULL, server);
+            }
+            // Bot responds to !datenow
+            if (message == "!datenow") {
+                time_t now = time(0);
+                struct tm *tm_info = localtime(&now);
+                char dateStr[64];
+                strftime(dateStr, sizeof(dateStr), "%Y-%m-%d %H:%M:%S", tm_info);
+                std::string dateMsg = ":BOT!bot@server PRIVMSG " + target + " :Current date and time: " + dateStr + "\r\n";
+                channel->broadcastMessage(dateMsg, NULL, server);
+            }
+            // Bot responds to !weather <location>
+            if (message.substr(0, 8) == "!weather") {
+                std::string location = "";
+                if (message.length() > 9) {
+                    location = message.substr(9); // Extract location after "!weather "
+                }
+                
+                if (location.empty()) {
+                    std::string helpMsg = ":BOT!bot@server PRIVMSG " + target + " :Usage: !weather <location>\r\n";
+                    channel->broadcastMessage(helpMsg, NULL, server);
+                } else {
+                    std::string weatherInfo = getWeatherData(location);
+                    std::string weatherMsg = ":BOT!bot@server PRIVMSG " + target + " :" + weatherInfo + "\r\n";
+                    channel->broadcastMessage(weatherMsg, NULL, server);
+                }
+            }
+            // Bot responds to !history
+            if (message == "!history") {
+                std::deque<std::string> history = channel->getLastMessages();
+                if (history.empty()) {
+                    std::string noMsg = ":BOT!bot@server PRIVMSG " + sender->getNickname() + " :No history available.\r\n";
+                    channel->broadcastMessage(noMsg, NULL, server);
+                } else {
+                    for (std::deque<std::string>::const_iterator it = history.begin(); it != history.end(); ++it) {
+                        std::string histMsg = ":BOT!bot@server PRIVMSG " + sender->getNickname() + " :" + *it + "\r\n";
+                        channel->broadcastMessage(histMsg, NULL, server);
+                    }
+                }
+            }
+        }
     } else {
         Client* recipient = server->FindClientByNickname(target);
         if (!recipient) {
@@ -57,4 +110,48 @@ bool isValidOperation(Server *server, Client *sender, const std::string &target,
         return false;
     }
     return true;
+}
+
+std::string getWeatherData(const std::string& location) {
+    // URL encode spaces and special characters for proper API request
+    std::string encodedLocation = location;
+    
+    // Replace spaces with %20 for URL encoding
+    size_t pos = 0;
+    while ((pos = encodedLocation.find(' ', pos)) != std::string::npos) {
+        encodedLocation.replace(pos, 1, "%20");
+        pos += 3; // Length of "%20"
+    }
+    
+    // Using wttr.in - a simple weather service that returns text format
+    std::string command = "curl -s 'https://wttr.in/" + encodedLocation + "?format=%l:+%c+%t+%h' 2>/dev/null";
+    
+    FILE* pipe = popen(command.c_str(), "r");
+    if (!pipe) {
+        return "Weather service unavailable";
+    }
+    
+    char buffer[512];
+    std::string result;
+    while (fgets(buffer, sizeof(buffer), pipe) != NULL) {
+        result += buffer;
+    }
+    pclose(pipe);
+    
+    // Remove trailing newline
+    if (!result.empty() && result[result.length()-1] == '\n') {
+        result.erase(result.length()-1);
+    }
+    
+    if (result.empty() || result.find("Unknown location") != std::string::npos) {
+        return "Weather data not found for: " + location;
+    }
+    
+    return "Weather - " + result;
+}
+
+std::string parseWeatherResponse(const std::string& jsonData) {
+    // This function is kept for potential future use with JSON APIs
+    // Currently using wttr.in which returns plain text
+    return jsonData;
 }
