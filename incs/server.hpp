@@ -5,6 +5,8 @@
 #include "ircserv.hpp"
 #include "channel.hpp"
 #include <cerrno>
+#include <map>
+#include <deque>
 
 class Client;
 class Channel;
@@ -20,6 +22,9 @@ private:
     std::vector<Client> clients;
     std::vector<struct pollfd> fds;
     std::vector<Channel*> channels;
+    std::map<int, std::deque<std::string> > outQueues;
+    std::map<int, size_t> outOffsets;
+    std::map<int, std::string> inBuffers;
 
 public:
     Server();
@@ -47,6 +52,12 @@ public:
     void SetupSocketOptions();
     void BindAndListenSocket(struct sockaddr_in &add);
     void HandlePollEvents();
+    void FlushClient(int fd);
+    void EnablePOLLOUT(int fd);
+    void DisablePOLLOUT(int fd);
+    void AppendAndParseClientInput(int fd, const char* data, size_t length);
+    void ParseBufferedLines(int fd, std::vector<std::string>& outLines);
+    void ProcessClientLine(std::string& line);
 
     Client* FindClientByFd(int fd);
     Client* FindClientByNickname(const std::string &nickname);
@@ -55,6 +66,7 @@ public:
     bool IsNicknameInUse(const std::string &nickname);
     void CheckClientAuthentication(Client* client);
     void SendToClient(int fd, const std::string& message);
+    void QueueSend(int fd, const std::string& message);
     void SendWelcomeMessage(int fd);
     void SendRegistrationCompleteMessage(Client* client);
 

@@ -195,12 +195,7 @@ void Channel::broadcastMessage(const std::string& message, Client* sender, Serve
         }
 
         std::cout << "DEBUG broadcastMessage: Sending to client FD " << clientFd << std::endl;
-        ssize_t result = send(clientFd, message.c_str(), message.length(), 0);
-        if (result == -1) {
-            std::cout << "DEBUG: Error sending message to client " << clientFd << " - " << strerror(errno) << std::endl;
-        } else {
-            std::cout << "DEBUG broadcastMessage: Successfully sent " << result << " bytes to FD " << clientFd << std::endl;
-        }
+        server->SendToClient(clientFd, message);
     }
 }
 
