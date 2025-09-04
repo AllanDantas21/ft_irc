@@ -136,6 +136,19 @@ void Parser::handleMode(Server *server, const std::string &target, const std::st
         }
 
         switch (c) {
+            case 'b':
+                if (adding) {
+                    channel->activateBot();
+                    modeChanges += 'b';
+                    std::string botMsg = ":BOT!bot@server NOTICE " + target + " :Bot activated in this channel!\r\n";
+                    channel->broadcastMessage(botMsg, NULL, server);
+                } else {
+                    channel->deactivateBot();
+                    modeChanges += 'b';
+                    std::string botMsg = ":BOT!bot@server NOTICE " + target + " :Bot deactivated in this channel!\r\n";
+                    channel->broadcastMessage(botMsg, NULL, server);
+                }
+                break;
             case 'k':
                 handleKeyMode(server, channel, client, adding, paramList, paramIndex, modeChanges, modeParams);
                 break;

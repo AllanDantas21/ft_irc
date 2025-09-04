@@ -2,8 +2,7 @@
 #include <algorithm>
 #include <sstream>
 
-Channel::Channel(std::string name) : channelName(name), userLimit(-1) {
-
+Channel::Channel(std::string name) : channelName(name), userLimit(-1), botActive(false) {
     modes['i'] = false;
     modes['t'] = true;
     modes['k'] = false;
@@ -12,6 +11,28 @@ Channel::Channel(std::string name) : channelName(name), userLimit(-1) {
     modes['n'] = true;
     modes['s'] = false;
     modes['p'] = false;
+}
+
+void Channel::activateBot() {
+    botActive = true;
+}
+
+void Channel::deactivateBot() {
+    botActive = false;
+}
+
+bool Channel::isBotActive() const {
+    return botActive;
+}
+
+void Channel::storeMessage(const std::string& msg) {
+    if (lastMessages.size() == 100)
+        lastMessages.pop_front();
+    lastMessages.push_back(msg);
+}
+
+std::deque<std::string> Channel::getLastMessages() const {
+    return lastMessages;
 }
 
 Channel::~Channel() {

@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <deque>
 #include <cerrno>
 
 class Client;
@@ -20,8 +21,17 @@ private:
     int userLimit;
     std::vector<std::string> inviteList;
     std::vector<std::string> banList;
+    // Bot support
+    bool botActive;
+    std::deque<std::string> lastMessages;
 
 public:
+    // Bot methods
+    void activateBot();
+    void deactivateBot();
+    bool isBotActive() const;
+    void storeMessage(const std::string& msg);
+    std::deque<std::string> getLastMessages() const;
     Channel(std::string name);
     ~Channel();
 
