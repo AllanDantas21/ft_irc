@@ -23,6 +23,7 @@ class DccClient
 		bool _isActive;
 		std::ofstream _outputFile;
 		size_t _totalBytesReceived;
+		std::string _tempFilename;
 
 	public:
 		DccClient(const std::string &filename, const std::string &host, int port, size_t filesize, int c);
@@ -33,6 +34,7 @@ class DccClient
 		int getSockfd();
 		int getClientFd();
 		bool isActive() const;
+		std::string displayTimestamp();
 };
 
 

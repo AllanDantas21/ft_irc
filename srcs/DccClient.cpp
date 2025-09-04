@@ -4,24 +4,32 @@
 #include <cstring>
 #include <errno.h>
 #include <fcntl.h>
+#include <ctime>
+#include <iomanip>
+
+std::string DccClient::displayTimestamp( void )
+{
+	time_t now = std::time(NULL);
+	struct tm timenow = *std::localtime(&now);
+
+	std::stringstream ss;
+	ss << "[" << timenow.tm_year + 1900 <<
+		std::setfill('0') << std::setw(2) << timenow.tm_mon + 1 <<
+		std::setfill('0') << std::setw(2) << timenow.tm_mday << "_" <<
+		std::setfill('0') << std::setw(2) << timenow.tm_hour <<
+		std::setfill('0') << std::setw(2) << timenow.tm_min <<
+		std::setfill('0') << std::setw(2) << timenow.tm_sec << "]-";
+
+	return ss.str();
+
+}
 
 DccClient::DccClient(const std::string &filename, const std::string &host, int port, size_t filesize, int clientFd)
-    : _filename(filename), _host(host), _port(port), _filesize(filesize), _sockfd(-1), _clientFd(clientFd), _isActive(false), _totalBytesReceived(0)
+	: _filename(filename), _host(host), _port(port), _filesize(filesize), _sockfd(-1), _clientFd(clientFd), _isActive(false), _totalBytesReceived(0)
 {
-	std::string uniqueName = filename;
-	int counter = 1;
-
-	// Se o arquivo já existe, adiciona um número ao nome
-	while (access(uniqueName.c_str(), F_OK) == 0) {
-		std::stringstream ss;
-		ss << filename << "." << counter++;
-		uniqueName = ss.str();
-	}
-	_filename = uniqueName;
-
-	// Criar um arquivo temporário
-	std::string tempFilename = _filename + ".part";
-	this->_outputFile.open(tempFilename.c_str(), std::ios::binary);
+	std::string uniqueFilename = displayTimestamp() + _filename;
+	_filename = uniqueFilename;
+	this->_outputFile.open(_filename.c_str(), std::ios::binary);
 	if (!this->_outputFile)
 	{
 		std::cerr << "Error: creating output file" << std::endl;
@@ -96,10 +104,11 @@ bool DccClient::receiveFile()
 	{
 		if (bytesReceived == 0)
 		{
+			_outputFile.close();
+
 			if (_totalBytesReceived == _filesize)
 			{
 				std::cout << "File received successfully: " << _filename << std::endl;
-				_outputFile.close();
 				std::stringstream ss;
 				ss << "File '" << _filename << "' received successfully. Size: " << _totalBytesReceived << " bytes.\r\n";
 				send(_clientFd, ss.str().c_str(), ss.str().length(), 0);
@@ -107,10 +116,7 @@ bool DccClient::receiveFile()
 			else
 			{
 				std::cerr << "Error: Connection closed prematurely" << std::endl;
-				_outputFile.close();
-				// Criar um arquivo temporário e só renomear para o nome final se a transferência for bem sucedida
-				std::string tempFilename = "received_" + _filename;
-				rename(tempFilename.c_str(), _filename.c_str());
+				remove(_filename.c_str());
 				std::stringstream ss;
 				ss << "Error: File transfer failed - Connection closed prematurely\r\n";
 				send(_clientFd, ss.str().c_str(), ss.str().length(), 0);
@@ -120,8 +126,7 @@ bool DccClient::receiveFile()
 		{
 			std::cerr << "Error: Lost connection or failed to receive file data" << std::endl;
 			_outputFile.close();
-			std::string tempFilename = "received_" + _filename;
-			remove(tempFilename.c_str());
+			remove(_tempFilename.c_str());
 			std::stringstream ss;
 			ss << "Error: File transfer failed - Lost connection\r\n";
 			send(_clientFd, ss.str().c_str(), ss.str().length(), 0);
@@ -132,15 +137,15 @@ bool DccClient::receiveFile()
 	this->_outputFile.write(buffer, bytesReceived);
 	_totalBytesReceived += bytesReceived;
 	int progress = (_filesize > 0) ? (static_cast<float>(_totalBytesReceived) / _filesize) * 100 : 100;
-    std::stringstream ss;
-    ss << "Recebendo " << _filename << ": " << progress << "% completo.\r\n";
-    send(_clientFd, ss.str().c_str(), ss.str().length(), 0);
+	std::stringstream ss;
+	ss << "Recebendo " << _filename << ": " << progress << "% completo.\r\n";
+	send(_clientFd, ss.str().c_str(), ss.str().length(), 0);
 
-    if (_totalBytesReceived >= _filesize) {
-        std::cout << "File received successfully: " << _filename << std::endl;
-        _isActive = false;
-        return false;
-    }
+	if (_totalBytesReceived >= _filesize) {
+		std::cout << "File received successfully: " << _filename << std::endl;
+		_isActive = false;
+		return false;
+	}
 
-    return true;
+	return true;
 }

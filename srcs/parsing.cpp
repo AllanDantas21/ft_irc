@@ -7,19 +7,16 @@ void Parser::handleDccSend(Server *server, const std::string &target, const std:
 	Client* sender = server->FindClientByFd(clientFd);
 	if (!sender)
 		return;
-	std::string cleanFilename = filename;
-	if (!cleanFilename.empty() && cleanFilename[cleanFilename.length() - 1] == '\001') {
-		cleanFilename.erase(cleanFilename.length() - 1);
-	}
+
 	struct stat st;
-	if (stat(cleanFilename.c_str(), &st) != 0) {
-		server->SendToClient(clientFd, "Error: File '" + cleanFilename + "' not found\r\n");
+	if (stat(filename.c_str(), &st) != 0) {
+		server->SendToClient(clientFd, "Error: File '" + filename + "' not found\r\n");
 		return;
 	}
 	size_t fileSize = static_cast<size_t>(st.st_size);
 	std::string localIP = sender->getIpAdd();
 
-	DccServer* dccServer = new DccServer(cleanFilename, target);
+	DccServer* dccServer = new DccServer(filename, target);
 	if (dccServer->init() != -1)
 	{
 		struct pollfd newPollFd;
@@ -32,7 +29,7 @@ void Parser::handleDccSend(Server *server, const std::string &target, const std:
 		uint32_t ip_num = inet_addr(localIP.c_str());
 
 		std::stringstream ss;
-		ss << "DCC SEND " << cleanFilename << " " << ntohl(ip_num) << " " << dccServer->getPort() << " " << fileSize;
+		ss << "\001DCC SEND " << filename << " " << ntohl(ip_num) << " " << dccServer->getPort() << " " << fileSize << "\001\r\n";
 
 		Client* recipient = server->FindClientByNickname(target);
 		std::cout << "DEBUG: DCC SEND to target='" << target << "' (nickname='" << (recipient ? recipient->getNickname() : "unknown") << "')" << std::endl;
