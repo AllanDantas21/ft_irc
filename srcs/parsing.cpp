@@ -29,7 +29,7 @@ void Parser::handleDccSend(Server *server, const std::string &target, const std:
 		uint32_t ip_num = inet_addr(localIP.c_str());
 
 		std::stringstream ss;
-		ss << "\001DCC SEND " << filename << " " << ntohl(ip_num) << " " << dccServer->getPort() << " " << fileSize << "\001\r\n";
+		ss << "\\001" << "DCC SEND " << filename << " " << ntohl(ip_num) << " " << dccServer->getPort() << " " << fileSize << "\\001";
 
 		Client* recipient = server->FindClientByNickname(target);
 		std::cout << "DEBUG: DCC SEND to target='" << target << "' (nickname='" << (recipient ? recipient->getNickname() : "unknown") << "')" << std::endl;
