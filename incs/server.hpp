@@ -4,10 +4,14 @@
 
 #include "ircserv.hpp"
 #include "channel.hpp"
+#include "DccServer.hpp"
+#include "DccClient.hpp"
 #include <cerrno>
 
 class Client;
 class Channel;
+class DccServer;
+class DccClient;
 
 class Server
 {
@@ -20,6 +24,8 @@ private:
     std::vector<Client> clients;
     std::vector<struct pollfd> fds;
     std::vector<Channel*> channels;
+    std::vector<DccServer*> dccServers;
+    std::vector<DccClient*> dccClients;
 
 public:
     Server();
@@ -63,6 +69,10 @@ public:
     bool RemoveChannel(const std::string& name);
     void RemoveEmptyChannels();
     std::vector<Channel*> GetChannels() const;
+    void HandleDccEvents(int fd);
+    void addPollFd(const struct pollfd& NewFd);
+    void addDccServer(DccServer* NewDccServer);
+    void addDccClient(DccClient* NewDccClient);
 };
 
 #endif
