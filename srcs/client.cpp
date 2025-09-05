@@ -32,3 +32,5 @@ void Client::SetPasswordValid(bool valid) { this->passwordValid = valid; }
 bool Client::hasCompletedRegistration() const {
     return passwordValid && !nickname.empty() && !username.empty();
 }
+void Client::setDccMessage(const std::string &message) { dccMessage = message; }
+std::string Client::getDccMessage() const { return dccMessage; }

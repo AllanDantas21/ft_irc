@@ -116,7 +116,34 @@ ft_irc is a project for the 42 curriculum that involves creating an IRC (Interne
             MODE #channel -l
         ```
 
+3. Bonus Commands:
 
+    * DCC SEND: Send files directly to another user
+    ```sh
+        # To send a file to another user
+        #1. Mode
+        PRIVMSG user :\001DCC SEND filename\001
+
+        #2. Mode
+        DCC SEND user filename
+
+        # Examples:
+        #1. Mode
+        PRIVMSG john :\001DCC SEND document.txt\001
+
+        #2. Mode
+        DCC SEND john document.txt
+
+    ```
+
+    * DCC GET: Receive files from another user
+    ```sh
+        # To accept and receive a file that was sent to you
+        DCC GET nickname filename
+
+        # Example:
+        DCC GET mary image.jpg
+    ```
 
 ## Project Structure
 
@@ -128,5 +155,5 @@ ft_irc is a project for the 42 curriculum that involves creating an IRC (Interne
 ## Authors
 
 - [Allan Dantas](https://github.com/allandantas21)
-- [Thais Franco](https://github.com/thaiismeneses)
+- [Thaís Meneses](https://github.com/thaiismeneses)
 - [Daniel Bessa](https://github.com/dwbessa)

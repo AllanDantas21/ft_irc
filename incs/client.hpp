@@ -13,6 +13,8 @@ private:
     std::string username;
     std::string realname;
     std::string IPadd;
+    std::string dccMessage;
+    
 public:
     Client(const int &fd, const std::string &ipadd);
     Client();
@@ -25,7 +27,7 @@ public:
     std::string getIpAdd() const;
     bool isAuthenticated() const;
     bool isPasswordValid() const;
-    
+
     void SetNickname(std::string nick);
     void SetUsername(std::string user);
     void SetRealname(std::string real);
@@ -33,8 +35,10 @@ public:
     void setIpAdd(std::string ipadd);
     void SetAuthenticated(bool auth);
     void SetPasswordValid(bool valid);
-    
+
     bool hasCompletedRegistration() const;
+    void setDccMessage(const std::string &message);
+    std::string getDccMessage() const;
 };
 
 #endif
