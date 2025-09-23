@@ -75,17 +75,21 @@ void Server::WaitConnection() {
 }
 
 void Server::HandlePollEvents() {
-    for (size_t i = 0; i < fds.size(); i++) {
-        if (fds[i].revents & POLLIN) {
-            if (fds[i].fd == ServerSocketFd)
-                AcceptNewClient();
-            else
-                ReceiveNewData(fds[i].fd);
-        }
-        if (fds[i].revents & POLLOUT) {
-            FlushClient(fds[i].fd);
-        }
-    }
+	for (size_t i = 0; i < fds.size(); i++)
+	{
+		if (fds[i].revents & POLLIN)
+		{
+			if (fds[i].fd == ServerSocketFd)
+				AcceptNewClient();
+			else if (FindClientByFd(fds[i].fd))
+				ReceiveNewData(fds[i].fd);
+			else
+				HandleDccEvents(fds[i].fd);
+		}
+		if (fds[i].revents & POLLOUT) {
+			FlushClient(fds[i].fd);
+		}
+	}
 }
 
 void Server::CloseFds() {
@@ -140,7 +144,7 @@ void Server::ReceiveNewData(int fd) {
             std::cout << RED << "Cliente <" << fd << "> Desconectado (erro na recepção: " << strerror(errno) << ")" << WHI << std::endl;
         }
         ClearClients(fd);
-        return (close(fd), void());
+        return;
     }
     AppendAndParseClientInput(fd, tmp, static_cast<size_t>(bytes));
 }
@@ -204,8 +208,6 @@ void Server::AppendAndParseClientInput(int fd, const char* data, size_t length)
     const size_t MAX_INBUF = 8192;
     if (buffer.size() > MAX_INBUF) {
         ClearClients(fd);
-        close(fd);
-        inBuffers.erase(fd);
         return;
     }
     std::vector<std::string> lines;
@@ -265,7 +267,7 @@ void Server::SendToClient(int fd, const std::string& message)
 void Server::QueueSend(int fd, const std::string& message)
 {
     outQueues[fd].push_back(message);
-    EnablePOLLOUT(fd);
+    EnablePollout(fd);
 }
 
 void Server::FlushClient(int fd)
@@ -289,17 +291,14 @@ void Server::FlushClient(int fd)
             break;
         }
         ClearClients(fd);
-        close(fd);
-        outQueues.erase(fd);
-        outOffsets.erase(fd);
         return;
     }
     if (queue.empty()) {
-        DisablePOLLOUT(fd);
+        DisablePollout(fd);
     }
 }
 
-void Server::EnablePOLLOUT(int fd)
+void Server::EnablePollout(int fd)
 {
     for (size_t i = 0; i < fds.size(); i++) {
         if (fds[i].fd == fd) {
@@ -309,7 +308,7 @@ void Server::EnablePOLLOUT(int fd)
     }
 }
 
-void Server::DisablePOLLOUT(int fd)
+void Server::DisablePollout(int fd)
 {
     for (size_t i = 0; i < fds.size(); i++) {
         if (fds[i].fd == fd) {

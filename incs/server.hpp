@@ -59,8 +59,8 @@ public:
     void BindAndListenSocket(struct sockaddr_in &add);
     void HandlePollEvents();
     void FlushClient(int fd);
-    void EnablePOLLOUT(int fd);
-    void DisablePOLLOUT(int fd);
+    void EnablePollout(int fd);
+    void DisablePollout(int fd);
     void AppendAndParseClientInput(int fd, const char* data, size_t length);
     void ParseBufferedLines(int fd, std::vector<std::string>& outLines);
     void ProcessClientLine(std::string& line);
