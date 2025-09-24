@@ -16,9 +16,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       
+      - name: Atualizar lista de pacotes
+        run: sudo apt-get update
+
       - name: Instalar dependências
-        run: |
-          sudo apt-get install -y valgrind
+        run: sudo apt-get install -y valgrind
 
       - name: Conceder permissão de execução
         run: chmod +x tests/test_valgrind.sh
