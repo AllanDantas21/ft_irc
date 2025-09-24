@@ -5,6 +5,7 @@ bool Server::HasSignal = false;
 Server::Server() : ServerSocketFd(-1){
 	serverName = "ft_irc.42.fr";
 }
+
 Server::~Server() {
 	for (size_t i = 0; i < channels.size(); i++) {
 		delete channels[i];
@@ -85,6 +86,9 @@ void Server::HandlePollEvents() {
 			else
 				HandleDccEvents(fds[i].fd);
 		}
+		if (fds[i].revents & POLLOUT) {
+			FlushClient(fds[i].fd);
+		}
 	}
 }
 
@@ -125,27 +129,24 @@ void Server::AcceptNewClient() {
 	if (!validateNewConnection(incofd))
 		return ;
 
-	connectClient(incofd, cliadd, clients, fds);
-	this->SendWelcomeMessage(incofd);
+    connectClient(incofd, cliadd, clients, fds);
+    this->SendWelcomeMessage(incofd);
+    inBuffers[incofd] = std::string();
 }
 
 void Server::ReceiveNewData(int fd) {
-	char buff[1024];
-
-	memset(buff, 0, sizeof(buff));
-	ssize_t bytes = recv(fd, buff, sizeof(buff) - 1, 0);
-
-	if (bytes <= 0) {
-		if (bytes == 0) {
-			std::cout << RED << "Cliente <" << fd << "> Desconectado (conexão fechada pelo cliente)" << WHI << std::endl;
-		} else {
-			std::cout << RED << "Cliente <" << fd << "> Desconectado (erro na recepção: " << strerror(errno) << ")" << WHI << std::endl;
-		}
-		ClearClients(fd);
-		return (close(fd), void());
-	}
-	std::cout << "DEBUG: Received from client " << fd << ": " << buff << std::endl;
-	Parser::MainParser(this, buff, fd);
+    char tmp[1024];
+    ssize_t bytes = recv(fd, tmp, sizeof(tmp), 0);
+    if (bytes <= 0) {
+        if (bytes == 0) {
+            std::cout << RED << "Cliente <" << fd << "> Desconectado (conexão fechada pelo cliente)" << WHI << std::endl;
+        } else {
+            std::cout << RED << "Cliente <" << fd << "> Desconectado (erro na recepção: " << strerror(errno) << ")" << WHI << std::endl;
+        }
+        ClearClients(fd);
+        return;
+    }
+    AppendAndParseClientInput(fd, tmp, static_cast<size_t>(bytes));
 }
 
 void Server::SignalHandler(int signum) {
@@ -193,9 +194,52 @@ void Server::ClearClients(int fd) {
 		}
 	}
 
-	CloseClientFd(fd);
-	CloseFd(fd);
+    CloseClientFd(fd);
+    CloseFd(fd);
+    outQueues.erase(fd);
+    outOffsets.erase(fd);
+    inBuffers.erase(fd);
 }
+
+void Server::AppendAndParseClientInput(int fd, const char* data, size_t length)
+{
+    std::string &buffer = inBuffers[fd];
+    buffer.append(data, data + length);
+    const size_t MAX_INBUF = 8192;
+    if (buffer.size() > MAX_INBUF) {
+        ClearClients(fd);
+        return;
+    }
+    std::vector<std::string> lines;
+    ParseBufferedLines(fd, lines);
+    for (size_t i = 0; i < lines.size(); i++) {
+        std::string &line = lines[i];
+        ProcessClientLine(line);
+        std::vector<char> cmd(line.begin(), line.end());
+        cmd.push_back('\0');
+        Parser::MainParser(this, &cmd[0], fd);
+    }
+}
+
+void Server::ParseBufferedLines(int fd, std::vector<std::string>& outLines)
+{
+    std::string &buffer = inBuffers[fd];
+    for (;;) {
+        size_t newlinePos = buffer.find('\n');
+        if (newlinePos == std::string::npos) break;
+        std::string line = buffer.substr(0, newlinePos);
+        buffer.erase(0, newlinePos + 1);
+        outLines.push_back(line);
+    }
+}
+
+void Server::ProcessClientLine(std::string& line)
+{
+    if (!line.empty() && line[line.size() - 1] == '\r') {
+        line.erase(line.size() - 1);
+    }
+}
+
 
 void Server::CloseClientFd(int fd) {
 	for (size_t i = 0; i < clients.size(); i++) {
@@ -217,7 +261,61 @@ void Server::CloseFd(int fd) {
 
 void Server::SendToClient(int fd, const std::string& message)
 {
-	send(fd, message.c_str(), message.length(), 0);
+    QueueSend(fd, message);
+}
+
+void Server::QueueSend(int fd, const std::string& message)
+{
+    outQueues[fd].push_back(message);
+    EnablePollout(fd);
+}
+
+void Server::FlushClient(int fd)
+{
+    std::deque<std::string> &queue = outQueues[fd];
+    size_t &offset = outOffsets[fd];
+    while (!queue.empty()) {
+        const std::string &current = queue.front();
+        const char *data = current.c_str() + offset;
+        size_t remaining = current.size() - offset;
+        ssize_t written = send(fd, data, remaining, 0);
+        if (written > 0) {
+            offset += static_cast<size_t>(written);
+            if (offset == current.size()) {
+                queue.pop_front();
+                offset = 0;
+            }
+            continue;
+        }
+        if (written == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+            break;
+        }
+        ClearClients(fd);
+        return;
+    }
+    if (queue.empty()) {
+        DisablePollout(fd);
+    }
+}
+
+void Server::EnablePollout(int fd)
+{
+    for (size_t i = 0; i < fds.size(); i++) {
+        if (fds[i].fd == fd) {
+            fds[i].events |= POLLOUT;
+            return;
+        }
+    }
+}
+
+void Server::DisablePollout(int fd)
+{
+    for (size_t i = 0; i < fds.size(); i++) {
+        if (fds[i].fd == fd) {
+            fds[i].events &= ~POLLOUT;
+            return;
+        }
+    }
 }
 
 void Server::SendWelcomeMessage(int fd)
