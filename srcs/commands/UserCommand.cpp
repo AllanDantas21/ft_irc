@@ -14,9 +14,17 @@ void Parser::handleUser(Server *server, const std::string &username, const std::
         return;
     }
     
-    client->SetUsername(username);
-    client->SetRealname(realname);
-    server->SendToClient(clientFd, "Username set to " + username + "\r\n");
+    std::string sanitizedUsername = sanitizeString(username);
+    std::string sanitizedRealname = sanitizeString(realname);
+    
+    if (sanitizedUsername.length() > 10) {
+        server->SendToClient(clientFd, "461 * USER :Username too long (max 10 chars)\r\n");
+        return;
+    }
+    
+    client->SetUsername(sanitizedUsername);
+    client->SetRealname(sanitizedRealname);
+    server->SendToClient(clientFd, "Username set to " + sanitizedUsername + "\r\n");
     
     server->CheckClientAuthentication(client);
 }
