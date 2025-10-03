@@ -32,7 +32,7 @@ void Parser::handlePrivmsg(Server *server, const std::string &target, const std:
         channel->broadcastMessage(formattedMessage, sender, server);
         // Bot stores last 100 messages
         if (channel->isBotActive()) {
-            channel->storeMessage("[" + sender->getNickname() + "] " + message);
+            channel->storeMessage("[" + sender->getNickname() + "] " + sanitizedMessage);
             // Bot responds to !help
             if (message == "!help") {
                 std::string helpMsg = ":BOT!bot@server PRIVMSG " + target + " :\nAvailable bot commands:\n!help\n!datenow\n!weather <location>\n!history\r\n";
