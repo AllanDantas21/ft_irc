@@ -112,7 +112,6 @@ bool isValidOperation(Server *server, Client *sender, const std::string &target,
         return false;
     }
     
-    // Validar tamanho máximo da mensagem (RFC 2812 especifica 512 caracteres)
     if (message.length() > 512) {
         server->SendToClient(clientFd, "412 :Message too long (max 512 chars)\r\n");
         return false;
