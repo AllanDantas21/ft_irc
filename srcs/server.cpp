@@ -43,6 +43,7 @@ void setupPollFd(int incofd, struct pollfd &NewPoll)
 	NewPoll.events = POLLIN;
 	NewPoll.revents = 0;
 }
+
 std::string Server::getServerName() const
 {
 	 return serverName;
