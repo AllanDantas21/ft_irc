@@ -27,6 +27,8 @@
 #define GRE "\e[1;32m"
 #define YEL "\e[1;33m"
 
+std::string sanitizeString(const std::string& input);
+
 class ArgumentValidator {
 public:
     static void validate(int count, char** args);

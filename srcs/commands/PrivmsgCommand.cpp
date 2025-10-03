@@ -27,11 +27,12 @@ void Parser::handlePrivmsg(Server *server, const std::string &target, const std:
             return;
         }
         
-        std::string formattedMessage = ":" + sender->getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
+        std::string sanitizedMessage = sanitizeString(message);
+        std::string formattedMessage = ":" + sender->getNickname() + " PRIVMSG " + target + " :" + sanitizedMessage + "\r\n";
         channel->broadcastMessage(formattedMessage, sender, server);
         // Bot stores last 100 messages
         if (channel->isBotActive()) {
-            channel->storeMessage("[" + sender->getNickname() + "] " + message);
+            channel->storeMessage("[" + sender->getNickname() + "] " + sanitizedMessage);
             // Bot responds to !help
             if (message == "!help") {
                 std::string helpMsg = ":BOT!bot@server PRIVMSG " + target + " :\nAvailable bot commands:\n!help\n!datenow\n!weather <location>\n!history\r\n";
@@ -88,7 +89,8 @@ void Parser::handlePrivmsg(Server *server, const std::string &target, const std:
             return;
         }
         
-        std::string formattedMessage = ":" + sender->getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
+        std::string sanitizedMessage = sanitizeString(message);
+        std::string formattedMessage = ":" + sender->getNickname() + " PRIVMSG " + target + " :" + sanitizedMessage + "\r\n";
         server->SendToClient(recipient->GetFd(), formattedMessage);
     }
 }
@@ -109,6 +111,12 @@ bool isValidOperation(Server *server, Client *sender, const std::string &target,
         server->SendToClient(clientFd, "412 :No text to send\r\n");
         return false;
     }
+    
+    if (message.length() > 512) {
+        server->SendToClient(clientFd, "412 :Message too long (max 512 chars)\r\n");
+        return false;
+    }
+    
     return true;
 }
 
