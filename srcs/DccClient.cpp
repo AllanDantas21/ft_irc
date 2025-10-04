@@ -63,13 +63,8 @@ int DccClient::init()
 		return (-1);
 	}
 
-	if (fcntl(_sockfd, F_SETFL, O_NONBLOCK) < 0)
-	{
-		std::cerr << "Error: setting socket DCC Client non-blocking" << std::endl;
-		close(_sockfd);
-		_sockfd = -1;
-		return (-1);
-	}
+	int flags = fcntl(_sockfd, F_GETFL, 0);
+	fcntl(_sockfd, F_SETFL, flags | O_NONBLOCK);
 
 	struct sockaddr_in serv_addr;
 	memset(&serv_addr, 0, sizeof(serv_addr));
