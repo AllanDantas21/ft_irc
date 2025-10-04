@@ -1,13 +1,14 @@
 # FT_IRC
-
-## BOARD
-[Team_Board](https://github.com/users/AllanDantas21/projects/3/views/1)
-
 ## Link RFC ref
 [RFC-2812](https://datatracker.ietf.org/doc/html/rfc2812)
 
-## Links de estudos
-[Estudos](./docs/link_utils.md)
+## Study Links
+[Studies](./docs/link_utils.md)
+
+## Command Documentation
+[HexChat Commands](./docs/commands/hexchat_commands.md)
+
+[Terminal Commands](./docs/commands/terminal_commands.md)
 
 ## Introduction
 
@@ -48,102 +49,7 @@ ft_irc is a project for the 42 curriculum that involves creating an IRC (Interne
     /nc <localhost> <port>
     ```
 
-2. Commands:
-
-    * KICK: Eject a client from the channel
-    ```sh
-        KICK #channel user
-    ```
-
-    * INVITE: Invite a client to a channel
-    ```sh
-        INVITE user #channel
-    ```
-
-    * TOPIC: Change or view the channel topic
-    ```sh
-        #This command shoud print the TOPIC that has been set to channel
-        TOPIC #channel
-
-        #This command should set a new TOPIC to channel
-        TOPIC #channel : NEW TOPIC
-    ```
-
-    * MODE: Change the channel’s mode, this enable the channel's creator to set some config to channel like an admin.
-
-        - i: Set/remove Invite-only channel
-        ```sh
-            #This MODE should restrict the users to only access the channel if they have a INVITE
-            MODE #channel +i
-
-            #This MODE deactivate the restriction to access the channel with an INVITE
-            MODE #channel -i
-        ```
-
-        - t: Set/remove the restrictions of the TOPIC command to channel operators
-        ```sh
-            # This MODE restricts changing the channel TOPIC to only channel operators
-            MODE #channel +t
-
-            # This MODE removes the restriction, allowing any user to change the channel TOPIC
-            MODE #channel -t
-        ```
-
-        - k: Set/remove the channel key (password)
-        ```sh
-            # This MODE restrict the users to only access the channel if they have known a password
-            MODE #channel +k secretkey
-
-            # This MODE removes the restriction, allowing any user to change access the channel
-            MODE #channel -k
-        ```
-
-        - o: Give/take channel operator privilege
-        ```sh
-            # This MODE gives privileges to user to be operators
-            MODE #channel +o user
-
-            # This MODE removes privileges from users to be operators
-            MODE #channel -o user
-        ```
-
-        - l: Set/remove the user limit to channel
-        ```sh
-            # This MODE sets a user limit for the channel (e.g., maximum 10 users)
-            MODE #channel +l 10
-
-            # This MODE removes the user limit for the channel
-            MODE #channel -l
-        ```
-
-3. Bonus Commands:
-
-    * DCC SEND: Send files directly to another user
-    ```sh
-        # To send a file to another user
-        #1. Mode
-        PRIVMSG user :\001DCC SEND filename\001
-
-        #2. Mode
-        DCC SEND user filename
-
-        # Examples:
-        #1. Mode
-        PRIVMSG john :\001DCC SEND document.txt\001
-
-        #2. Mode
-        DCC SEND john document.txt
-
-    ```
-
-    * DCC GET: Receive files from another user
-    ```sh
-        # To accept and receive a file that was sent to you
-        DCC GET nickname filename
-
-        # Example:
-        DCC GET mary image.jpg
-    ```
+2. For detailed commands, see the [terminal commands documentation](./docs/commands/terminal_commands.md).
 
 ## Project Structure
 
