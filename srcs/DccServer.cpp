@@ -41,9 +41,12 @@ int DccServer::init()
 		return (-1);
 	}
 
-	//config socket non-blocking
-	int flags = fcntl(_sockfd, F_GETFL, 0);
-	fcntl(_sockfd, F_SETFL, flags | O_NONBLOCK);
+	if (fcntl(_sockfd, F_SETFL, O_NONBLOCK) < 0)
+	{
+		std::cerr << "Error: setting socket DCC non-blocking" << std::endl;
+		close(_sockfd);
+		return (-1);
+	}
 
 	//config address
 	struct sockaddr_in addr;
