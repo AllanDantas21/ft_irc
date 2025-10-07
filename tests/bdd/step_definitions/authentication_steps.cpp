@@ -5,8 +5,6 @@
  * Testes BDD para autenticação de cliente IRC
  * 
  * Baseado no arquivo de feature: tests/bdd/tests/authentication.feature
- * 
- * Cenário: Autenticação bem-sucedida com sequência correta
  */
 
 TEST_CASE("Autenticacao bem-sucedida com sequencia correta", "[authentication]") {

@@ -72,10 +72,20 @@ void TestServer::sendCommand(int clientFd, const std::string& command) {
     Parser parser;
     parser.MainParser(server, buffer, clientFd);
     
-    // Capturar mensagens enfileiradas após o comando
-    std::vector<std::string> queuedMessages = server->GetQueuedMessages(clientFd);
-    for (size_t i = 0; i < queuedMessages.size(); i++) {
-        MessageCapture::capture(clientFd, queuedMessages[i]);
+    for (size_t i = 0; i < mockFds.size(); i++) {
+        int fd = mockFds[i];
+        std::vector<std::string> queuedMessages = server->GetQueuedMessages(fd);
+        
+        if (processedMessageCount.find(fd) == processedMessageCount.end()) {
+            processedMessageCount[fd] = 0;
+        }
+        
+        size_t processed = processedMessageCount[fd];
+        for (size_t j = processed; j < queuedMessages.size(); j++) {
+            MessageCapture::capture(fd, queuedMessages[j]);
+        }
+        
+        processedMessageCount[fd] = queuedMessages.size();
     }
 }
 

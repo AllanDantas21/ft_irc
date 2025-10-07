@@ -14,6 +14,7 @@ private:
     Server* server;
     std::vector<int> mockFds;
     std::map<int, std::string> receivedMessages;
+    std::map<int, size_t> processedMessageCount;
 
 public:
     TestServer();

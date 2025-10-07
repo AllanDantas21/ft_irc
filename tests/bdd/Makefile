@@ -14,6 +14,7 @@ TEST_RUNNER = test_runner
 
 TEST_SOURCES = main.cpp \
                $(STEP_DEFS_DIR)/authentication_steps.cpp \
+               $(STEP_DEFS_DIR)/message_steps.cpp \
                $(SUPPORT_DIR)/test_helpers.cpp
 
 TEST_OBJS = $(patsubst %.cpp,$(TEST_OBJ_DIR)/%.o,$(TEST_SOURCES))
@@ -71,6 +72,9 @@ test-verbose: $(TEST_RUNNER)
 
 test-auth: $(TEST_RUNNER)
 	./$(TEST_RUNNER) "[authentication]"
+
+test-messages: $(TEST_RUNNER)
+	./$(TEST_RUNNER) "[messages]"
 
 test-negative: $(TEST_RUNNER)
 	./$(TEST_RUNNER) "[negative]"
