@@ -325,6 +325,18 @@ void Server::SendWelcomeMessage(int fd)
 	SendToClient(fd, welcomeMsg);
 }
 
+// tests only
+std::vector<std::string> Server::GetQueuedMessages(int fd) const
+{
+	std::vector<std::string> messages;
+	std::map<int, std::deque<std::string> >::const_iterator it = outQueues.find(fd);
+	if (it != outQueues.end()) {
+		const std::deque<std::string>& queue = it->second;
+		messages.assign(queue.begin(), queue.end());
+	}
+	return messages;
+}
+
 Client* Server::FindClientByFd(int fd) {
 	for (size_t i = 0; i < clients.size(); i++) {
 		if (clients[i].GetFd() == fd) {

@@ -1,7 +1,7 @@
 CXX = c++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98
 OBJDIR = obj
-SRCS = $(shell find . -name "*.cpp")
+SRCS = $(shell find srcs -name "*.cpp")
 OBJS = $(patsubst %.cpp,$(OBJDIR)/%.o,$(SRCS))
 NAME = ircserv
 
@@ -19,8 +19,12 @@ clean:
 
 fclean: clean
 	rm -f $(NAME)
+	$(MAKE) -C tests/bdd fclean
 
 re: fclean all
+
+test:
+	$(MAKE) -C tests/bdd test
 
 # The following commands are used for containerized builds in the macOS environment.
 # Ensure you have the 'container' command available, which is a native macOS Docker,
