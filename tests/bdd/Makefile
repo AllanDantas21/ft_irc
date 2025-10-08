@@ -15,6 +15,7 @@ TEST_RUNNER = test_runner
 TEST_SOURCES = main.cpp \
                $(STEP_DEFS_DIR)/authentication_steps.cpp \
                $(STEP_DEFS_DIR)/message_steps.cpp \
+               $(STEP_DEFS_DIR)/channel_steps.cpp \
                $(SUPPORT_DIR)/test_helpers.cpp
 
 TEST_OBJS = $(patsubst %.cpp,$(TEST_OBJ_DIR)/%.o,$(TEST_SOURCES))
@@ -75,6 +76,9 @@ test-auth: $(TEST_RUNNER)
 
 test-messages: $(TEST_RUNNER)
 	./$(TEST_RUNNER) "[messages]"
+
+test-channels: $(TEST_RUNNER)
+	./$(TEST_RUNNER) "[channels]"
 
 test-negative: $(TEST_RUNNER)
 	./$(TEST_RUNNER) "[negative]"
