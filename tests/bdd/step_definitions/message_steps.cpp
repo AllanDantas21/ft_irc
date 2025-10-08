@@ -5,7 +5,7 @@
 /*
  * Testes BDD para mensagens privadas IRC (PRIVMSG)
  * 
- * Baseado no arquivo de feature: tests/bdd/tests/messages.feature
+ * Baseado no arquivo de feature: tests/bdd/feature/messages.feature
  */
 
 TEST_CASE("Enviar mensagem privada entre dois usuarios autenticados", "[messages][privmsg]") {
