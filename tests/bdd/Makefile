@@ -38,8 +38,6 @@ PROJECT_OBJS = $(OBJ_DIR)/srcs/server.o \
                $(OBJ_DIR)/srcs/commands/ModeCommand.o \
                $(OBJ_DIR)/srcs/commands/PrivmsgCommand.o
 
-.PHONY: all test clean fclean re build-project help
-
 all: $(TEST_RUNNER)
 
 build-project:
@@ -68,23 +66,13 @@ test: $(TEST_RUNNER)
 	@echo "   Testes Concluídos"
 	@echo "================================"
 
-test-verbose: $(TEST_RUNNER)
-	./$(TEST_RUNNER) -s
 
-test-auth: $(TEST_RUNNER)
-	./$(TEST_RUNNER) "[authentication]"
-
-test-messages: $(TEST_RUNNER)
-	./$(TEST_RUNNER) "[messages]"
-
-test-channels: $(TEST_RUNNER)
-	./$(TEST_RUNNER) "[channels]"
-
-test-negative: $(TEST_RUNNER)
-	./$(TEST_RUNNER) "[negative]"
-
-list-tests: $(TEST_RUNNER)
-	./$(TEST_RUNNER) --list-tests
+test-valgrind: $(TEST_RUNNER)
+	@echo ""
+	@echo "================================"
+	@echo "   Testes BDD com Valgrind"
+	@echo "================================"
+	@bash test_valgrind_bdd.sh
 
 clean:
 	rm -rf $(TEST_OBJ_DIR)
@@ -95,3 +83,5 @@ fclean: clean
 	@echo "✓ Executável de teste removido"
 
 re: fclean all
+
+.PHONY: all test clean fclean re build-project help test-valgrind

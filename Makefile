@@ -26,6 +26,9 @@ re: fclean all
 test:
 	$(MAKE) -C tests/bdd test
 
+test-valgrind:
+	$(MAKE) -C tests/bdd test-valgrind
+
 # The following commands are used for containerized builds in the macOS environment.
 # Ensure you have the 'container' command available, which is a native macOS Docker,
 # realeased in june 2025.
@@ -47,3 +50,5 @@ container:
 
 container-stop:
 	container stop --all && container system stop
+
+.PHONY: all clean fclean re test test-valgrind container-build container-run container-shell container container-stop

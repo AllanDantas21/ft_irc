@@ -1,0 +1,4 @@
+test_runner
+obj/
+
+valgrind_bdd.log
