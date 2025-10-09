@@ -1,5 +1,5 @@
 CXX = c++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98  -g
 OBJDIR = obj
 SRCS = $(shell find srcs -name "*.cpp")
 OBJS = $(patsubst %.cpp,$(OBJDIR)/%.o,$(SRCS))
@@ -22,6 +22,9 @@ fclean: clean
 	$(MAKE) -C tests/bdd fclean
 
 re: fclean all
+
+valgrind: re
+	valgrind  --leak-check=full --show-leak-kinds=all --track-origins=yes --track-fds=yes ./ircserv 6667 1234
 
 test:
 	$(MAKE) -C tests/bdd test
