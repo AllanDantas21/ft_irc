@@ -88,6 +88,9 @@ public:
     void addPollFd(const struct pollfd& NewFd);
     void addDccServer(DccServer* NewDccServer);
     void addDccClient(DccClient* NewDccClient);
+
+    // tests only
+    std::vector<std::string> GetQueuedMessages(int fd) const;
 };
 
 #endif
