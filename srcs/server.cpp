@@ -7,18 +7,36 @@ Server::Server() : ServerSocketFd(-1){
 }
 
 Server::~Server() {
+	for (size_t i = 0; i < clients.size(); i++) {
+		std::cout << RED << "Cliente <" << clients[i].GetFd() << "> Desconectado (destrutor)" << WHI << std::endl;
+		close(clients[i].GetFd());
+	}
+	
+	if (ServerSocketFd != -1) {
+		std::cout << RED << "Servidor <" << ServerSocketFd << "> Desconectado (destrutor)" << WHI << std::endl;
+		close(ServerSocketFd);
+	}
+	
 	for (size_t i = 0; i < channels.size(); i++) {
 		delete channels[i];
 	}
+	
 	for (size_t i = 0; i < dccServers.size(); i++) {
 		delete dccServers[i];
 	}
+
 	for (size_t i = 0; i < dccClients.size(); i++) {
 		delete dccClients[i];
 	}
+	
 	dccClients.clear();
 	dccServers.clear();
 	channels.clear();
+	clients.clear();
+	fds.clear();
+	outQueues.clear();
+	outOffsets.clear();
+	inBuffers.clear();
 }
 
 void Server::ServerInit(int port, std::string password) {
@@ -144,7 +162,7 @@ void Server::ReceiveNewData(int fd) {
         } else {
             std::cout << RED << "Cliente <" << fd << "> Desconectado (erro na recepção: " << strerror(errno) << ")" << WHI << std::endl;
         }
-        ClearClients(fd);
+        DisconnectClient(fd);
         return;
     }
     AppendAndParseClientInput(fd, tmp, static_cast<size_t>(bytes));
@@ -171,35 +189,43 @@ void Server::BindAndListenSocket(struct sockaddr_in &add) {
 		throw(std::runtime_error("falha no listen()"));
 }
 
-void Server::ClearClients(int fd) {
+void Server::DisconnectClient(int fd) {
 	Client* client = FindClientByFd(fd);
 	if (client) {
 		std::cout << "Cliente <" << fd << "> Desconectado" << std::endl;
-
-		for (size_t i = 0; i < channels.size(); i++) {
-			if (channels[i]->hasClient(client)) {
-				std::string partMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getIpAdd() + " PART " + channels[i]->getName() + " :Client disconnected\r\n";
-				channels[i]->broadcastMessage(partMsg, client, this);
-
-				channels[i]->removeClient(client);
-			}
-		}
-
+		RemoveClientFromChannels(client);
 		RemoveEmptyChannels();
 	}
 
+	close(fd);
+	RemoveClientFromList(fd);
+	CleanupClientResources(fd);
+}
+
+void Server::RemoveClientFromChannels(Client* client) {
+	for (size_t i = 0; i < channels.size(); i++) {
+		if (channels[i]->hasClient(client)) {
+			std::string partMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getIpAdd() + " PART " + channels[i]->getName() + " :Client disconnected\r\n";
+			channels[i]->broadcastMessage(partMsg, client, this);
+			channels[i]->removeClient(client);
+		}
+	}
+}
+
+void Server::RemoveClientFromList(int fd) {
 	for (size_t i = 0; i < clients.size(); i++) {
 		if (clients[i].GetFd() == fd) {
 			clients.erase(clients.begin() + i);
 			break;
 		}
 	}
+}
 
-    CloseClientFd(fd);
-    CloseFd(fd);
-    outQueues.erase(fd);
-    outOffsets.erase(fd);
-    inBuffers.erase(fd);
+void Server::CleanupClientResources(int fd) {
+	RemoveFromPollFds(fd);
+	outQueues.erase(fd);
+	outOffsets.erase(fd);
+	inBuffers.erase(fd);
 }
 
 void Server::AppendAndParseClientInput(int fd, const char* data, size_t length)
@@ -208,7 +234,7 @@ void Server::AppendAndParseClientInput(int fd, const char* data, size_t length)
     buffer.append(data, data + length);
     const size_t MAX_INBUF = 8192;
     if (buffer.size() > MAX_INBUF) {
-        ClearClients(fd);
+        DisconnectClient(fd);
         return;
     }
     std::vector<std::string> lines;
@@ -241,17 +267,7 @@ void Server::ProcessClientLine(std::string& line)
     }
 }
 
-
-void Server::CloseClientFd(int fd) {
-	for (size_t i = 0; i < clients.size(); i++) {
-		if (clients[i].GetFd() == fd) {
-			close(clients[i].GetFd());
-			break;
-		}
-	}
-}
-
-void Server::CloseFd(int fd) {
+void Server::RemoveFromPollFds(int fd) {
 	for (size_t i = 0; i < fds.size(); i++) {
 		if (fds[i].fd == fd) {
 			fds.erase(fds.begin() + i);
@@ -291,7 +307,7 @@ void Server::FlushClient(int fd)
         if (written == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
             break;
         }
-        ClearClients(fd);
+        DisconnectClient(fd);
         return;
     }
     if (queue.empty()) {
@@ -387,12 +403,10 @@ Channel* Server::FindChannelByName(const std::string& name) {
 }
 
 Channel* Server::CreateChannel(const std::string& name) {
-	// Check if channel already exists
 	if (FindChannelByName(name)) {
 		return NULL;
 	}
 
-	// Validate channel name
 	if (!Channel::isValidName(name)) {
 		return NULL;
 	}

@@ -45,9 +45,12 @@ public:
     static void SignalHandler(int signum);
 
     void CloseFds();
-    void CloseFd(int fd);
+    void RemoveFromPollFds(int fd);
     void CloseClientFd(int fd);
-    void ClearClients(int fd);
+    void DisconnectClient(int fd);
+    void RemoveClientFromChannels(Client* client);
+    void RemoveClientFromList(int fd);
+    void CleanupClientResources(int fd);
     std::string getServerName() const;
 
     void SetFd(int fd);
