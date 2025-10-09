@@ -1,7 +1,7 @@
 CXX = c++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98  -g
 OBJDIR = obj
-SRCS = $(shell find . -name "*.cpp")
+SRCS = $(shell find srcs -name "*.cpp")
 OBJS = $(patsubst %.cpp,$(OBJDIR)/%.o,$(SRCS))
 NAME = ircserv
 
@@ -19,11 +19,18 @@ clean:
 
 fclean: clean
 	rm -f $(NAME)
+	$(MAKE) -C tests/bdd fclean
 
 re: fclean all
 
 valgrind: re
 	valgrind  --leak-check=full --show-leak-kinds=all --track-origins=yes --track-fds=yes ./ircserv 6667 1234
+
+test:
+	$(MAKE) -C tests/bdd test
+
+test-valgrind:
+	$(MAKE) -C tests/bdd test-valgrind
 
 # The following commands are used for containerized builds in the macOS environment.
 # Ensure you have the 'container' command available, which is a native macOS Docker,
@@ -46,3 +53,5 @@ container:
 
 container-stop:
 	container stop --all && container system stop
+
+.PHONY: all clean fclean re test test-valgrind container-build container-run container-shell container container-stop
