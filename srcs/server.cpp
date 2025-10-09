@@ -7,9 +7,11 @@ Server::Server() : ServerSocketFd(-1){
 }
 
 Server::~Server() {
-	for (size_t i = 0; i < clients.size(); i++) {
-		std::cout << RED << "Cliente <" << clients[i].GetFd() << "> Desconectado (destrutor)" << WHI << std::endl;
-		close(clients[i].GetFd());
+	if (!clients.empty()) {
+		for (size_t i = 0; i < clients.size(); i++) {
+			std::cout << RED << "Cliente <" << clients[i].GetFd() << "> Desconectado (destrutor)" << WHI << std::endl;
+			close(clients[i].GetFd());
+		}
 	}
 	
 	if (ServerSocketFd != -1) {
@@ -119,7 +121,16 @@ void Server::CloseFds() {
 	if (ServerSocketFd != -1) {
 		std::cout << RED << "Servidor <" << ServerSocketFd << "> Desconectado" << WHI << std::endl;
 		close(ServerSocketFd);
+		ServerSocketFd = -1;
 	}
+	
+	clients.clear();
+	fds.clear();
+	outQueues.clear();
+	outOffsets.clear();
+	inBuffers.clear();
+	
+	std::cout << GRE << "O Servidor Foi Fechado!" << WHI << std::endl;
 }
 
 static bool validateNewConnection(int socketFd) {
