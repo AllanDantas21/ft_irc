@@ -1,6 +1,13 @@
 #include "../incs/ircserv.hpp"
 #include <sstream>
 
+void initPollFd(int incofd, struct pollfd &NewPoll)
+{
+	memset(&NewPoll, 0, sizeof(NewPoll));
+	NewPoll.fd = incofd;
+	NewPoll.events = POLLIN;
+	NewPoll.revents = 0;
+}
 
 void Parser::handleDccSend(Server *server, const std::string &target, const std::string &filename, int clientFd)
 {
@@ -20,8 +27,7 @@ void Parser::handleDccSend(Server *server, const std::string &target, const std:
 	if (dccServer->init() != -1)
 	{
 		struct pollfd newPollFd;
-		newPollFd.fd = dccServer->getSockfd();
-		newPollFd.events = POLLIN;
+		initPollFd(dccServer->getSockfd(), newPollFd);
 		server->addPollFd(newPollFd);
 		server->addDccServer(dccServer);
 
@@ -81,8 +87,7 @@ void Parser::handleDccGet(Server *server, const std::string &targetNick, const s
 	if (dccClient->init() != -1)
 	{
 		struct pollfd newPollFd;
-		newPollFd.fd = dccClient->getSockfd();
-		newPollFd.events = POLLIN;
+		initPollFd(dccClient->getSockfd(), newPollFd);
 		server->addPollFd(newPollFd);
 		server->addDccClient(dccClient);
 		server->SendToClient(clientFd, "DCC GET initiated for file '" + Filename + "' from user '" + targetNick + "'\r\n");
