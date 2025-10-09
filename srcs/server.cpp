@@ -39,7 +39,6 @@ void Server::SetAtributes(int port, std::string password) {
 
 void setupPollFd(int incofd, struct pollfd &NewPoll)
 {
-	memset(&NewPoll, 0, sizeof(NewPoll));
 	NewPoll.fd = incofd;
 	NewPoll.events = POLLIN;
 	NewPoll.revents = 0;
@@ -53,8 +52,6 @@ std::string Server::getServerName() const
 void Server::ServerConfig() {
 	struct sockaddr_in add;
 	struct pollfd NewPoll;
-
-	memset(&add, 0, sizeof(add));
 	add.sin_family = AF_INET;
 	add.sin_port = htons(this->Port);
 	add.sin_addr.s_addr = INADDR_ANY;
@@ -93,11 +90,6 @@ void Server::HandlePollEvents() {
 		if (fds[i].revents & POLLOUT) {
 			FlushClient(fds[i].fd);
 		}
-		if (fds[i].revents & (POLLHUP | POLLERR)) {
-			if (fds[i].fd == ServerSocketFd) {
-				ClearClients(fds[i].fd);
-			}
-		}
 	}
 }
 
@@ -105,16 +97,6 @@ void Server::CloseFds() {
 	for (size_t i = 0; i < clients.size(); i++) {
 		std::cout << RED << "Cliente <" << clients[i].GetFd() << "> Desconectado" << WHI << std::endl;
 		close(clients[i].GetFd());
-	}
-	for (size_t i = 0; i < dccServers.size(); i++) {
-		if (dccServers[i]->getSockfd() != -1) {
-			close(dccServers[i]->getSockfd());
-		}
-	}
-	for (size_t i = 0; i < dccClients.size(); i++) {
-		if (dccClients[i]->getSockfd() != -1) {
-			close(dccClients[i]->getSockfd());
-		}
 	}
 	if (ServerSocketFd != -1) {
 		std::cout << RED << "Servidor <" << ServerSocketFd << "> Desconectado" << WHI << std::endl;
